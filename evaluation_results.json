@@ -1,0 +1,90 @@
+{
+  "evaluation_metadata": {
+    "project": "Pan-European Aparthotel AI Strategy — Project 5",
+    "evaluator_model": "claude-sonnet-4-20250514",
+    "evaluation_date": "2025-01-01",
+    "dataset": "Hotel Booking Reservation 2024 (Kaggle)",
+    "criteria": ["relevance", "accuracy", "actionability", "clarity"],
+    "scale": "1-5 where 5 is best"
+  },
+  "results": [
+    {
+      "insight_id": 1,
+      "headline": "OTA bookings cancel at 2.3x the rate of direct bookings",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 4,
+        "actionability": 5,
+        "clarity": 5,
+        "overall": 5
+      },
+      "reasoning": "Highly relevant to an OTA-dependent aparthotel. The 2.3x figure is specific, memorable, and actionable. Minor accuracy deduction because dataset mixes resort and city hotels.",
+      "improvement": "Add estimated annual revenue impact of OTA cancellations to strengthen the business case."
+    },
+    {
+      "insight_id": 2,
+      "headline": "Last-minute bookings (0-2 days) cancel at nearly double the average rate",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 4,
+        "actionability": 5,
+        "clarity": 5,
+        "overall": 5
+      },
+      "reasoning": "Strong business relevance — lead time is the most controllable cancellation signal. Limitation is correctly flagged. Action maps directly to the n8n workflow demonstrated.",
+      "improvement": "Distinguish cancellations within 1 hour of booking (likely accidental) vs 24-48h after (likely intentional) for more precise targeting."
+    },
+    {
+      "insight_id": 3,
+      "headline": "ADR drops an average of 18% in the two weeks following high-cancellation spikes",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 3,
+        "actionability": 3,
+        "clarity": 4,
+        "overall": 3
+      },
+      "reasoning": "Causal interpretation is uncertain — r=-0.41 is moderate correlation at best. The action is vague ('investigate whether...') rather than a clear recommendation.",
+      "improvement": "Reframe as a reactive pricing pattern that AI could intercept earlier, with a specific suggested intervention."
+    },
+    {
+      "insight_id": 4,
+      "headline": "July and August generate 40% more bookings than Jan-Feb but at only 8% higher ADR",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 5,
+        "actionability": 5,
+        "clarity": 5,
+        "overall": 5
+      },
+      "reasoning": "Excellent insight. The framing is immediately legible to a CEO and clearly indicates underpricing in peak season. Specific numbers are cited and the limitation is correctly flagged.",
+      "improvement": "Add competitor benchmark — if competitors charge 25-30% more in July, the underpricing argument becomes much stronger."
+    },
+    {
+      "insight_id": 5,
+      "headline": "Lead time is the single strongest predictor of cancellation in the dataset",
+      "scores": {
+        "relevance": 4,
+        "accuracy": 5,
+        "actionability": 4,
+        "clarity": 4,
+        "overall": 4
+      },
+      "reasoning": "Technically strong with correct caveat that r=0.29 is a baseline, not a full model. Slightly technical for a non-data-science audience. Action could be more specific.",
+      "improvement": "Translate r=+0.29 into plain language showing the practical meaning for cancellation probability."
+    }
+  ],
+  "summary_statistics": {
+    "average_scores": {
+      "relevance": 4.8,
+      "accuracy": 4.2,
+      "actionability": 4.4,
+      "clarity": 4.6,
+      "overall": 4.4
+    },
+    "highest_scoring_insight": 1,
+    "lowest_scoring_insight": 3,
+    "weakest_criterion": "accuracy",
+    "strongest_criterion": "relevance"
+  }
+}
