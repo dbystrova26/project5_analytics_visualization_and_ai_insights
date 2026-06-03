@@ -1,8 +1,9 @@
 # Evaluation report — AI insight quality review
 
 **Project:** Pan-European Aparthotel AI Strategy  
-**Evaluator method:** LLM-as-judge (Claude claude-sonnet-4-20250514)  
-**Insights evaluated:** 5 agent-generated insights from booking dataset analysis  
+**Evaluator method:** LLM-as-judge (claude-sonnet-4-6)  
+**Insights evaluated:** 5 agent-generated insights from real booking dataset analysis  
+**Dataset:** Hotel Booking Reservation 2024 — 119,388 rows after cleaning  
 **Date:** Week 8, Day 2
 
 ---
@@ -10,7 +11,7 @@
 ## 1. Evaluation methodology
 
 ### Approach
-Each insight was submitted to a separate LLM judge instance with a structured evaluation prompt. The judge scores each insight on four criteria, returns a JSON object, and provides reasoning. This is the standard LLM-as-judge pattern used in RLHF and agentic evaluation pipelines.
+Each insight was submitted to a separate LLM judge instance with a structured evaluation prompt. The judge scores each insight on four criteria (1–5), returns a JSON object, and provides reasoning. This is the standard LLM-as-judge pattern used in RLHF and agentic evaluation pipelines.
 
 ### Judge prompt (full text)
 
@@ -55,55 +56,10 @@ ACTION: {action}
 
 ## 2. Evaluation results
 
-### Insight 1 — "OTA bookings cancel at 2.3x the rate of direct bookings"
+### Insight 1 — "Group bookings are your highest cancellation risk"
 
-| Criterion | Score | Max |
-|---|---|---|
-| Relevance | 5 | 5 |
-| Accuracy | 4 | 5 |
-| Actionability | 5 | 5 |
-| Clarity | 5 | 5 |
-| **Overall** | **5** | **5** |
-
-**Judge reasoning:** This is highly relevant to an aparthotel CEO whose main challenge is OTA dependency. The 2.3x figure is specific and memorable. The action (direct booking incentives, tighter OTA cancellation policies) is immediately implementable. Minor accuracy deduction because dataset mixes resort and city hotels, which may not fully represent this company's profile.
-
-**Improvement suggestion:** Add an estimated annual revenue impact of OTA cancellations to make the business case even more concrete.
-
----
-
-### Insight 2 — "Last-minute bookings (0–2 days) cancel at nearly double the average rate"
-
-| Criterion | Score | Max |
-|---|---|---|
-| Relevance | 5 | 5 |
-| Accuracy | 4 | 5 |
-| Actionability | 5 | 5 |
-| Clarity | 5 | 5 |
-| **Overall** | **5** | **5** |
-
-**Judge reasoning:** Very strong business relevance — lead time is the most controllable cancellation signal. The limitation correctly flags that some 0–2 day cancellations may be accidental corrections, not no-shows. Action is clear and directly maps to the n8n workflow demonstrated.
-
-**Improvement suggestion:** Distinguish 0–2 day cancellations that happen within 1 hour of booking (likely accidental) vs those that happen 24–48h after booking (likely intentional) for more precise targeting.
-
----
-
-### Insight 3 — "ADR drops an average of 18% in the two weeks following high-cancellation spikes"
-
-| Criterion | Score | Max |
-|---|---|---|
-| Relevance | 5 | 5 |
-| Accuracy | 3 | 5 |
-| Actionability | 3 | 5 |
-| Clarity | 4 | 5 |
-| **Overall** | **3** | **5** |
-
-**Judge reasoning:** The insight correctly identifies a reactive pricing pattern but the causal interpretation is uncertain (correlation r=–0.41 is moderate at best). "18% ADR drop" is a headline statistic that requires more context. The action is somewhat vague — "investigate whether revenue managers are dropping rates" is a question, not a recommendation.
-
-**Improvement suggestion:** Reframe as: "When cancellation rates exceed 35%, revenue managers appear to reactively discount. AI pricing could detect these situations earlier and suggest a smaller, proactive adjustment rather than a reactive drop."
-
----
-
-### Insight 4 — "July and August generate 40% more bookings than Jan–Feb but at only 8% higher ADR"
+**Agent output:**
+> Groups have a 61.1% cancellation rate (n=19,810), compared to just 15.3% for Direct bookings and 18.7% for Corporate — 4x higher than the lowest-risk segment.
 
 | Criterion | Score | Max |
 |---|---|---|
@@ -113,25 +69,85 @@ ACTION: {action}
 | Clarity | 5 | 5 |
 | **Overall** | **5** | **5** |
 
-**Judge reasoning:** Excellent insight. The "40% more volume at only 8% higher price" framing is immediately legible to a CEO and clearly indicates underpricing in peak season. Specific booking numbers and ADR figures are cited. The limitation (dataset includes resort hotels) is correctly flagged. This insight alone would justify the AI project to a skeptical CEO.
+**Judge reasoning:** The 61.1% vs 15.3% comparison is striking and immediately actionable. Specific sample size (n=19,810) adds credibility. The limitation correctly flags that high cancellation doesn't automatically mean low profitability. The action (non-refundable deposits, binding group agreements) is realistic and directly implementable.
 
-**Improvement suggestion:** Add a benchmark comparison — if competitors charge 25–30% more in July, the underpricing argument becomes even stronger.
+**Improvement suggestion:** Add an estimated annual revenue impact — if 61% of group bookings cancel and average group booking value is €X, the total revenue at risk figure would make this even more compelling for Chleo.
 
 ---
 
-### Insight 5 — "Lead time is the single strongest predictor of cancellation in the dataset"
+### Insight 2 — "Long lead time bookings are cancellation time bombs"
+
+**Agent output:**
+> Bookings made 365+ days in advance have a 68.0% cancellation rate, while bookings 0–2 days before arrival have only 8.1%. Cancellation rate increases monotonically with lead time.
 
 | Criterion | Score | Max |
 |---|---|---|
-| Relevance | 4 | 5 |
+| Relevance | 5 | 5 |
 | Accuracy | 5 | 5 |
+| Actionability | 5 | 5 |
+| Clarity | 5 | 5 |
+| **Overall** | **5** | **5** |
+
+**Judge reasoning:** "Monotonically increases with lead time" is a genuinely surprising and counterintuitive finding that challenges conventional wisdom (long lead time = committed customer). The graduated cancellation policy recommendation (higher deposits for >90 day bookings) is specific and proportionate. The limitation honestly flags the causation question.
+
+**Improvement suggestion:** Add the volume of 365+ day bookings as a % of total bookings — if it's only 2% of bookings, the revenue impact is limited even at 68% cancellation. Context on scale would help prioritisation.
+
+---
+
+### Insight 3 — "Travel agent channels underperform direct bookings by 2.3x"
+
+**Agent output:**
+> TA/TO channel has 41.0% cancellation rate vs Direct at 17.5% — a 23.5pp gap. Yet Online TA and Direct have similar ADR (€117.96 vs €117.69), meaning equal pricing for 2.3x higher cancellation risk.
+
+| Criterion | Score | Max |
+|---|---|---|
+| Relevance | 5 | 5 |
+| Accuracy | 5 | 5 |
+| Actionability | 5 | 5 |
+| Clarity | 5 | 5 |
+| **Overall** | **5** | **5** |
+
+**Judge reasoning:** This is the strongest insight — it combines cancellation rate AND ADR data to make a pricing efficiency argument that a CEO will immediately grasp. "Equal pricing for 2.3x higher cancellation risk" is a memorable, boardroom-ready framing. The action (renegotiate TA/TO contracts or shift to direct) is strategic and realistic.
+
+**Improvement suggestion:** Include the commission rate paid to TA/TO channels (typically 15–20%) to complete the unit economics argument — the true cost comparison is ADR minus commission vs direct ADR.
+
+---
+
+### Insight 4 — "City hotels face 41–43% cancellation vs resort hotels at 27–30%"
+
+**Agent output:**
+> All city hotel properties cluster at 40.6–43.2% cancellation. All resort properties cluster at 26.3–29.9%. The 13–16pp gap is consistent across all locations, suggesting a property-type issue not a location issue.
+
+| Criterion | Score | Max |
+|---|---|---|
+| Relevance | 5 | 5 |
+| Accuracy | 4 | 5 |
 | Actionability | 4 | 5 |
+| Clarity | 5 | 5 |
+| **Overall** | **4** | **5** |
+
+**Judge reasoning:** The observation that the gap is "consistent across all locations" is methodologically sound and correctly rules out location as a confounding factor. Slight accuracy deduction because the dataset covers city and resort hotels which may have fundamentally different customer profiles — the comparison may not directly transfer to an aparthotel chain that operates only city properties. Action could be more specific about what "Resort Hotel practices" to apply.
+
+**Improvement suggestion:** Since Chleo runs an aparthotel chain (city properties only), clarify whether the resort hotel benchmark is aspirational or whether the relevant comparison is within city properties by channel/segment mix.
+
+---
+
+### Insight 5 — "Special requests and parking indicate committed customers"
+
+**Agent output:**
+> Special requests: r=–0.235 with cancellation. Parking: r=–0.195. Lead time: r=+0.293 (strongest positive correlate). Customers making specific requests are 2–3x less likely to cancel.
+
+| Criterion | Score | Max |
+|---|---|---|
+| Relevance | 5 | 5 |
+| Accuracy | 4 | 5 |
+| Actionability | 5 | 5 |
 | Clarity | 4 | 5 |
 | **Overall** | **4** | **5** |
 
-**Judge reasoning:** Technically strong — correctly reports Pearson r values and caveats them as baseline correlations, not a full model. The distinction between rule-based and ML approaches is useful for a CEO. Slightly technical for a non-data-science audience. The action is clear but could be more specific about what the "simple rule" would look like.
+**Judge reasoning:** Operationalising correlation scores into a "flag zero-request bookings for retention campaigns" is a genuinely clever, actionable use of weak signal data. The limitation correctly and explicitly states that correlation ≠ causation and that special requests may be a proxy rather than a lever. Slight accuracy deduction because r=–0.235 is a weak correlation — "2–3x less likely to cancel" may overstate the practical effect size.
 
-**Improvement suggestion:** Translate r=+0.29 into plain language: "For every additional 10 days of lead time, the cancellation probability increases by approximately X percentage points."
+**Improvement suggestion:** Translate r=–0.235 into plain language — e.g., "bookings with at least one special request cancel at X% vs Y% for zero-request bookings" — rather than using the correlation coefficient, which a CEO may not intuitively interpret.
 
 ---
 
@@ -139,40 +155,42 @@ ACTION: {action}
 
 | Insight | Relevance | Accuracy | Actionability | Clarity | Overall |
 |---|---|---|---|---|---|
-| 1 — OTA vs direct | 5 | 4 | 5 | 5 | 5 |
-| 2 — Last-minute | 5 | 4 | 5 | 5 | 5 |
-| 3 — ADR drop | 5 | 3 | 3 | 4 | 3 |
-| 4 — Seasonal pricing | 5 | 5 | 5 | 5 | 5 |
-| 5 — Lead time predictor | 4 | 5 | 4 | 4 | 4 |
-| **Average** | **4.8** | **4.2** | **4.4** | **4.6** | **4.4** |
+| 1 — Group cancellations | 5 | 5 | 5 | 5 | 5 |
+| 2 — Lead time risk | 5 | 5 | 5 | 5 | 5 |
+| 3 — TA/TO vs direct | 5 | 5 | 5 | 5 | 5 |
+| 4 — City vs resort | 5 | 4 | 4 | 5 | 4 |
+| 5 — Special requests | 5 | 4 | 5 | 4 | 4 |
+| **Average** | **5.0** | **4.6** | **4.8** | **4.8** | **4.6** |
 
-**Highest scoring:** Insights 1, 2, and 4 — all scored 5/5 overall  
-**Lowest scoring:** Insight 3 — overall 3/5 due to causal uncertainty  
-**Weakest criterion across all insights:** Accuracy (avg 4.2) — reflects correct scepticism about dataset generalisability
+**Highest scoring:** Insights 1, 2, 3 — all scored 5/5 overall  
+**Lowest scoring:** Insights 4 and 5 — 4/5, both due to generalisability questions  
+**Strongest criterion:** Relevance (5.0 average) — all insights are directly relevant to aparthotel operations  
+**Weakest criterion:** Accuracy (4.6) — minor deductions for correlation interpretation and cross-property-type comparisons
 
 ---
 
 ## 4. Bias awareness
 
 ### Potential biases in the judge prompt
-- **Positivity bias:** LLMs tend to be generous scorers. The judge may inflate scores for well-written insights even if evidence is weak. Mitigation: the prompt explicitly asks for a concrete "improvement suggestion" to force critical evaluation.
-- **Plausibility bias:** The judge cannot actually run the analysis — it evaluates whether the numbers *sound* plausible, not whether they are correct. Accuracy scores should be validated by running the tools directly.
-- **Framing effect:** Insights that include a specific limitation in the "LIMITATION" field tend to score higher on accuracy, rewarding transparency over correctness.
+- **Positivity bias:** LLMs tend to score well-structured outputs generously. The judge may inflate scores for insights with explicit limitations — rewarding transparency over correctness.
+- **Plausibility bias:** The judge cannot re-run the tools — it evaluates whether numbers *sound* plausible, not whether they are arithmetically correct. All figures were verified by re-running the tools manually.
+- **Self-evaluation blind spot:** The judge (Claude) evaluates insights generated by the same model family. An independent human expert or a different model family would provide stronger evaluation independence.
 
 ### Calibration considerations
-- Scores were not calibrated against human expert ratings. For a production evaluation pipeline, you would run the same insights through 3 judges and take the majority score.
-- The overall score is a judge-assigned holistic rating, not a mean of the four criteria — this is deliberate, as a single weak criterion can disqualify an otherwise good insight.
+- Scores were not calibrated against human expert ratings. For a production pipeline, run the same insights through 3 independent judges and take the majority score.
+- The overall score is a holistic judge rating, not a mean of the four criteria — a single weak criterion can appropriately lower an otherwise strong insight.
 
-### Limitations of LLM-as-judge approach
-- The judge cannot verify whether the cited data actually exists in the dataset
-- The judge uses the same language model family as the agent — this creates a self-evaluation blind spot
-- For high-stakes decisions, human expert review should supplement LLM-as-judge scores
+### Limitations of LLM-as-judge
+- Cannot verify the underlying data calculations independently
+- May be overly generous to well-written insights regardless of statistical rigour
+- For high-stakes business decisions, human domain expert review should complement LLM-as-judge scores
 
 ---
 
-## 5. Recommendations for insight quality improvement
+## 5. Recommendations for improvement
 
-1. **Insight 3** should be rewritten to separate the observation (ADR drops after cancellation spikes) from the interpretation (this is reactive pricing). Correlation ≠ causation must be made explicit in the insight, not just the limitation field.
-2. **All insights** would benefit from a "revenue impact" estimate — this translates data patterns into CEO language.
-3. **Insight 5** should include a worked example showing what the rule-based alert would look like in practice.
-4. For the **next iteration**, add a confidence score to each insight (High / Medium / Low based on sample size and effect size) so Chleo can immediately see which insights to act on vs which need more data.
+1. **Add revenue impact estimates** to Insights 1 and 3 — translate cancellation rates into €€ figures to make the business case undeniable for Chleo.
+2. **Insight 5** should replace the Pearson r values with a plain-language comparison table showing actual cancellation rates for zero vs one+ special requests.
+3. **Insight 4** needs a caveat specific to Chleo's business — since she runs city-only aparthotels, the resort comparison is aspirational benchmarking, not a direct operational comparison.
+4. For the **next iteration**, add a confidence level (High/Medium/Low) to each insight based on sample size and effect size, so Chleo can instantly see which to act on vs which need more data.
+5. Consider running the agent on the **Hotel Prices in Europe** dataset to generate a 6th insight specifically about event-driven pricing opportunities — this would strengthen the dynamic pricing use case.

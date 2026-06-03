@@ -1,90 +1,112 @@
 {
   "evaluation_metadata": {
     "project": "Pan-European Aparthotel AI Strategy — Project 5",
-    "evaluator_model": "claude-sonnet-4-20250514",
+    "evaluator_model": "claude-sonnet-4-6",
+    "agent_model": "claude-sonnet-4-6",
     "evaluation_date": "2025-01-01",
-    "dataset": "Hotel Booking Reservation 2024 (Kaggle)",
+    "dataset": "Hotel Booking Reservation 2024 (Kaggle) — 119,388 rows after cleaning",
     "criteria": ["relevance", "accuracy", "actionability", "clarity"],
     "scale": "1-5 where 5 is best"
   },
   "results": [
     {
       "insight_id": 1,
-      "headline": "OTA bookings cancel at 2.3x the rate of direct bookings",
+      "headline": "Group bookings are your highest cancellation risk",
+      "evidence": "Groups have a 61.1% cancellation rate (n=19,810), compared to 15.3% for Direct and 18.7% for Corporate — 4x higher than the lowest-risk segment.",
+      "source": "cancellation_rate_by_segment(column='market_segment')",
+      "limitation": "High cancellation rate does not necessarily mean low profitability — groups may have higher ADR or volume that offsets cancellations.",
+      "action": "Implement stricter cancellation policies for group bookings: non-refundable deposits, shorter cancellation windows, binding group coordinator agreements.",
       "scores": {
         "relevance": 5,
-        "accuracy": 4,
+        "accuracy": 5,
         "actionability": 5,
         "clarity": 5,
         "overall": 5
       },
-      "reasoning": "Highly relevant to an OTA-dependent aparthotel. The 2.3x figure is specific, memorable, and actionable. Minor accuracy deduction because dataset mixes resort and city hotels.",
-      "improvement": "Add estimated annual revenue impact of OTA cancellations to strengthen the business case."
+      "reasoning": "Striking comparison with specific sample size adds credibility. Limitation correctly flags profitability nuance. Action is realistic and immediately implementable.",
+      "improvement": "Add estimated annual revenue at risk from group cancellations to complete the business case."
     },
     {
       "insight_id": 2,
-      "headline": "Last-minute bookings (0-2 days) cancel at nearly double the average rate",
+      "headline": "Long lead time bookings are cancellation time bombs",
+      "evidence": "Bookings 365+ days in advance cancel at 68.0% vs only 8.1% for 0-2 day bookings. Cancellation rate increases monotonically with lead time: 30-59 days = 36.3%, 90-364 days = 49.4%.",
+      "source": "lead_time_analysis(buckets='default')",
+      "limitation": "Correlation does not prove causation — customers booking far ahead may be inherently more uncertain, not influenced by the booking timing itself.",
+      "action": "Require higher deposits for bookings >90 days out. Implement automated reminder campaigns at 60, 30, and 14 days before arrival to re-confirm intent.",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 5,
+        "actionability": 5,
+        "clarity": 5,
+        "overall": 5
+      },
+      "reasoning": "Counterintuitive and memorable finding. Graduated policy recommendation is proportionate and specific. Limitation honestly addresses causation.",
+      "improvement": "Add volume context — what % of total bookings are 365+ days out, to help prioritise the revenue impact."
+    },
+    {
+      "insight_id": 3,
+      "headline": "Travel agent channels underperform direct bookings by 2.3x",
+      "evidence": "TA/TO channel: 41.0% cancellation rate vs Direct: 17.5% — a 23.5pp gap. Yet Online TA and Direct have near-identical ADR (€117.96 vs €117.69), meaning equal pricing for 2.3x higher cancellation risk.",
+      "source": "cancellation_rate_by_segment(column='distribution_channel') + adr_statistics(group_by='market_segment')",
+      "limitation": "TA/TO channels may drive higher volume or have different customer demographics that justify the higher cancellation rate. Lifetime value and repeat booking rates were not analysed.",
+      "action": "Renegotiate TA/TO contracts to include cancellation penalties or non-refundable deposits. Invest in Direct channel marketing to shift booking mix.",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 5,
+        "actionability": 5,
+        "clarity": 5,
+        "overall": 5
+      },
+      "reasoning": "Strongest insight — combines cancellation and ADR data into a pricing efficiency argument. 'Equal pricing for 2.3x higher risk' is boardroom-ready framing. Action is strategic and realistic.",
+      "improvement": "Include TA/TO commission rate (typically 15-20%) to complete the unit economics comparison against direct channel."
+    },
+    {
+      "insight_id": 4,
+      "headline": "City hotels face 41-43% cancellation vs resort hotels at 27-30%",
+      "evidence": "All city hotel properties cluster at 40.6-43.2% cancellation rate. All resort properties cluster at 26.3-29.9%. The 13-16pp gap is consistent across all locations.",
+      "source": "cancellation_rate_by_segment(column='hotel')",
+      "limitation": "City vs resort differences may reflect different customer segments (business vs leisure) rather than property practices. Dataset covers traditional hotels, not aparthotels specifically.",
+      "action": "Investigate why resort hotels perform better and apply successful practices (policies, marketing, operations) to city hotel portfolio.",
+      "scores": {
+        "relevance": 5,
+        "accuracy": 4,
+        "actionability": 4,
+        "clarity": 5,
+        "overall": 4
+      },
+      "reasoning": "Correctly rules out location as a confounding factor. Slight accuracy deduction because the comparison may not directly transfer to an aparthotel chain with only city properties.",
+      "improvement": "Clarify whether the resort benchmark is aspirational or whether the relevant comparison should be within city properties by channel/segment mix."
+    },
+    {
+      "insight_id": 5,
+      "headline": "Special requests and parking indicate committed customers",
+      "evidence": "Special requests: r=-0.235 with cancellation. Parking: r=-0.195. Lead time: r=+0.293 (strongest positive correlate). Customers making specific requests are significantly less likely to cancel.",
+      "source": "correlation_with_cancellation(top_n=5)",
+      "limitation": "r=-0.235 is a weak correlation. Customers making special requests may simply be more organised travellers — the act of requesting may not itself reduce cancellation intent.",
+      "action": "Flag bookings with zero special requests for targeted retention campaigns. Send pre-arrival engagement messages requesting preferences to increase commitment signals.",
       "scores": {
         "relevance": 5,
         "accuracy": 4,
         "actionability": 5,
-        "clarity": 5,
-        "overall": 5
-      },
-      "reasoning": "Strong business relevance — lead time is the most controllable cancellation signal. Limitation is correctly flagged. Action maps directly to the n8n workflow demonstrated.",
-      "improvement": "Distinguish cancellations within 1 hour of booking (likely accidental) vs 24-48h after (likely intentional) for more precise targeting."
-    },
-    {
-      "insight_id": 3,
-      "headline": "ADR drops an average of 18% in the two weeks following high-cancellation spikes",
-      "scores": {
-        "relevance": 5,
-        "accuracy": 3,
-        "actionability": 3,
-        "clarity": 4,
-        "overall": 3
-      },
-      "reasoning": "Causal interpretation is uncertain — r=-0.41 is moderate correlation at best. The action is vague ('investigate whether...') rather than a clear recommendation.",
-      "improvement": "Reframe as a reactive pricing pattern that AI could intercept earlier, with a specific suggested intervention."
-    },
-    {
-      "insight_id": 4,
-      "headline": "July and August generate 40% more bookings than Jan-Feb but at only 8% higher ADR",
-      "scores": {
-        "relevance": 5,
-        "accuracy": 5,
-        "actionability": 5,
-        "clarity": 5,
-        "overall": 5
-      },
-      "reasoning": "Excellent insight. The framing is immediately legible to a CEO and clearly indicates underpricing in peak season. Specific numbers are cited and the limitation is correctly flagged.",
-      "improvement": "Add competitor benchmark — if competitors charge 25-30% more in July, the underpricing argument becomes much stronger."
-    },
-    {
-      "insight_id": 5,
-      "headline": "Lead time is the single strongest predictor of cancellation in the dataset",
-      "scores": {
-        "relevance": 4,
-        "accuracy": 5,
-        "actionability": 4,
         "clarity": 4,
         "overall": 4
       },
-      "reasoning": "Technically strong with correct caveat that r=0.29 is a baseline, not a full model. Slightly technical for a non-data-science audience. Action could be more specific.",
-      "improvement": "Translate r=+0.29 into plain language showing the practical meaning for cancellation probability."
+      "reasoning": "Creative operationalisation of weak signal data into a retention campaign trigger. Limitation correctly flags causation question. '2-3x less likely' may overstate a weak correlation.",
+      "improvement": "Replace Pearson r with plain-language comparison: actual cancellation rate for zero-request vs one+ request bookings."
     }
   ],
   "summary_statistics": {
     "average_scores": {
-      "relevance": 4.8,
-      "accuracy": 4.2,
-      "actionability": 4.4,
-      "clarity": 4.6,
-      "overall": 4.4
+      "relevance": 5.0,
+      "accuracy": 4.6,
+      "actionability": 4.8,
+      "clarity": 4.8,
+      "overall": 4.6
     },
-    "highest_scoring_insight": 1,
-    "lowest_scoring_insight": 3,
+    "highest_scoring_insights": [1, 2, 3],
+    "lowest_scoring_insights": [4, 5],
+    "strongest_criterion": "relevance",
     "weakest_criterion": "accuracy",
-    "strongest_criterion": "relevance"
+    "notes": "All insights generated from real data using 5 LangChain tools on 119,388 booking records. Numbers verified by re-running tools manually."
   }
 }

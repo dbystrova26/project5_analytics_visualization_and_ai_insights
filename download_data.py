@@ -24,25 +24,44 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Set up Kaggle credentials from .env before importing kaggle ───────────────
-kaggle_user = os.getenv("KAGGLE_USERNAME")
-kaggle_key = os.getenv("KAGGLE_KEY")
+def setup_kaggle_credentials():
+    """
+    Supports three credential formats:
+      1. KAGGLE_API_TOKEN=KGAT_xxxxx  (new single-token format)
+      2. KAGGLE_USERNAME + KAGGLE_KEY  (classic format)
+      3. ~/.kaggle/kaggle.json         (file-based)
+    """
+    # Format 1 — new KAGGLE_API_TOKEN (starts with KGAT_)
+    api_token = os.getenv("KAGGLE_API_TOKEN", "").strip().strip('"')
+    if api_token:
+        os.environ["KAGGLE_TOKEN"] = api_token
+        print("Kaggle credentials loaded from KAGGLE_API_TOKEN")
+        return
 
-if kaggle_user and kaggle_key:
-    os.environ["KAGGLE_USERNAME"] = kaggle_user
-    os.environ["KAGGLE_KEY"] = kaggle_key
-    print("Kaggle credentials loaded from .env")
-else:
+    # Format 2 — classic username + key
+    kaggle_user = os.getenv("KAGGLE_USERNAME")
+    kaggle_key = os.getenv("KAGGLE_KEY")
+    if kaggle_user and kaggle_key:
+        os.environ["KAGGLE_USERNAME"] = kaggle_user
+        os.environ["KAGGLE_KEY"] = kaggle_key
+        print("Kaggle credentials loaded from KAGGLE_USERNAME + KAGGLE_KEY")
+        return
+
+    # Format 3 — kaggle.json file
     kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
     if kaggle_json.exists():
         print(f"Using Kaggle credentials from {kaggle_json}")
-    else:
-        print(
-            "\nNo Kaggle credentials found.\n"
-            "Option 1: Add KAGGLE_USERNAME and KAGGLE_KEY to your .env file\n"
-            "Option 2: Download kaggle.json from kaggle.com/settings/account\n"
-            "          and place it at ~/.kaggle/kaggle.json\n"
-        )
-        exit(1)
+        return
+
+    print(
+        "\nNo Kaggle credentials found.\n"
+        "Add one of these to your .env file:\n"
+        "  KAGGLE_API_TOKEN=KGAT_xxxx   (from kaggle.com → Settings → API)\n"
+        "  or KAGGLE_USERNAME=x and KAGGLE_KEY=x\n"
+    )
+    exit(1)
+
+setup_kaggle_credentials()
 
 try:
     import kaggle
