@@ -16,9 +16,13 @@ import numpy as np
 from langchain.tools import tool
 
 
-DATA_RAW = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
-DATA_PROCESSED = os.path.join(os.path.dirname(__file__), "..", "data", "processed")
-BOOKINGS_FILE = os.path.join(DATA_PROCESSED, "bookings_clean.csv")
+# ── Paths — works whether script is run from project root or agent/ subfolder ─
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_root_data = os.path.join(_HERE, "data", "raw")
+_sub_data  = os.path.join(_HERE, "..", "data", "raw")
+DATA_RAW       = os.path.normpath(_root_data if os.path.exists(_root_data) else _sub_data)
+DATA_PROCESSED = os.path.normpath(DATA_RAW.replace("raw", "processed"))
+BOOKINGS_FILE  = os.path.join(DATA_PROCESSED, "bookings_clean.csv")
 
 
 def _load_bookings() -> pd.DataFrame:
@@ -75,7 +79,7 @@ def adr_statistics(group_by: str = "none") -> str:
     Pass group_by='none' for overall statistics.
     """
     df = _load_bookings()
-    df = df[df["adr"] > 0]  # Remove zero/free rates
+    df = df[df["adr"] > 0]
 
     if group_by == "none":
         stats = df["adr"].describe()
@@ -110,11 +114,10 @@ def lead_time_analysis(buckets: str = "default") -> str:
     """
     Analyse booking lead time (days between booking and arrival).
     Shows cancellation rate per lead time bucket.
-    Reveals whether last-minute bookings cancel more often.
     """
     df = _load_bookings()
 
-    bin_edges = [0, 3, 7, 14, 30, 60, 90, 365, 9999]
+    bin_edges  = [0, 3, 7, 14, 30, 60, 90, 365, 9999]
     bin_labels = ["0–2d", "3–6d", "7–13d", "14–29d", "30–59d", "60–89d", "90–364d", "365d+"]
 
     df["lead_bucket"] = pd.cut(
@@ -138,7 +141,7 @@ def lead_time_analysis(buckets: str = "default") -> str:
 
 
 # ─────────────────────────────────────────────
-# TOOL 4: Occupancy / booking volume trend
+# TOOL 4: Booking volume trend
 # ─────────────────────────────────────────────
 @tool
 def booking_volume_trend(period: str = "month") -> str:
@@ -148,29 +151,24 @@ def booking_volume_trend(period: str = "month") -> str:
     """
     df = _load_bookings()
 
-    if "arrival_date_month" not in df.columns and "arrival_date_year" not in df.columns:
-        return "Date columns not found in dataset. Check preprocessing output."
+    if "arrival_date_month" not in df.columns:
+        return "Date columns not found. Check preprocessing output."
 
-    if period == "month":
-        if "arrival_date_month" in df.columns and "arrival_date_year" in df.columns:
-            group = df.groupby(["arrival_date_year", "arrival_date_month"]).size().reset_index(name="bookings")
-            lines = ["Monthly booking volume:", ""]
-            for _, row in group.iterrows():
-                lines.append(f"  {row['arrival_date_year']} {row['arrival_date_month']:<12}: {int(row['bookings']):,} bookings")
-            return "\n".join(lines)
-
-    return "Could not compute trend. Ensure preprocessing completed successfully."
+    group = df.groupby(["arrival_date_year", "arrival_date_month"]).size().reset_index(name="bookings")
+    lines = ["Monthly booking volume:", ""]
+    for _, row in group.iterrows():
+        lines.append(f"  {int(row['arrival_date_year'])} {row['arrival_date_month']:<12}: {int(row['bookings']):,} bookings")
+    return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────
-# TOOL 5: Correlation quick check
+# TOOL 5: Correlation with cancellation
 # ─────────────────────────────────────────────
 @tool
 def correlation_with_cancellation(top_n: int = 5) -> str:
     """
     Calculate correlation of numeric features with the is_canceled flag.
-    Returns the top N most correlated features — useful for understanding
-    what drives cancellation risk.
+    Returns the top N most correlated features.
     """
     df = _load_bookings()
 
@@ -181,23 +179,19 @@ def correlation_with_cancellation(top_n: int = 5) -> str:
     top = correlations.abs().sort_values(ascending=False).head(top_n)
 
     lines = [f"Top {top_n} numeric features correlated with cancellation:", ""]
-    for feature, corr_val in top.items():
+    for feature, _ in top.items():
         direction = "positive" if correlations[feature] > 0 else "negative"
-        lines.append(f"  {feature:<35} r={correlations[feature]:>+.3f}  ({direction} correlation)")
+        lines.append(f"  {feature:<35} r={correlations[feature]:>+.3f}  ({direction})")
     return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────
-# PREPROCESSING — run with --preprocess flag
+# PREPROCESSING
 # ─────────────────────────────────────────────
 def preprocess_datasets():
-    """
-    Clean and standardise raw datasets into processed CSVs.
-    Expects raw CSVs in data/raw/. Writes cleaned file to data/processed/.
-    """
+    """Clean raw datasets and save to data/processed/."""
     os.makedirs(DATA_PROCESSED, exist_ok=True)
 
-    # Try common filenames for the booking dataset
     raw_candidates = [
         "hotel_bookings.csv",
         "hotel-booking-reservation.csv",
@@ -224,40 +218,31 @@ def preprocess_datasets():
     print(f"Loaded {len(df):,} rows, {len(df.columns)} columns")
 
     # Drop columns with >40% missing
-    missing_threshold = 0.4
-    df = df.loc[:, df.isnull().mean() < missing_threshold]
+    df = df.loc[:, df.isnull().mean() < 0.4]
 
     # Fill common nulls
-    if "children" in df.columns:
-        df["children"] = df["children"].fillna(0)
-    if "country" in df.columns:
-        df["country"] = df["country"].fillna("Unknown")
-    if "agent" in df.columns:
-        df["agent"] = df["agent"].fillna(0)
-    if "company" in df.columns:
-        df["company"] = df["company"].fillna(0)
+    for col, fill in [("children", 0), ("country", "Unknown"), ("agent", 0), ("company", 0)]:
+        if col in df.columns:
+            df[col] = df[col].fillna(fill)
 
     # Remove impossible ADR values
     if "adr" in df.columns:
         before = len(df)
-        df = df[df["adr"] >= 0]
-        df = df[df["adr"] < 5000]
+        df = df[(df["adr"] >= 0) & (df["adr"] < 5000)]
         print(f"Removed {before - len(df)} rows with invalid ADR")
 
-    # Ensure is_canceled is integer
     if "is_canceled" in df.columns:
         df["is_canceled"] = df["is_canceled"].astype(int)
 
     out_path = os.path.join(DATA_PROCESSED, "bookings_clean.csv")
     df.to_csv(out_path, index=False)
-    print(f"Saved cleaned dataset: {out_path} ({len(df):,} rows)")
+    print(f"Saved: {out_path} ({len(df):,} rows)")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preprocess", action="store_true", help="Preprocess raw datasets")
+    parser.add_argument("--preprocess", action="store_true")
     args = parser.parse_args()
-
     if args.preprocess:
         preprocess_datasets()
     else:
