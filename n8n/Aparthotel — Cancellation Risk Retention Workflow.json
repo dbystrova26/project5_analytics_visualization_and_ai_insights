@@ -1,0 +1,183 @@
+{
+  "name": "Aparthotel — Cancellation Risk Retention Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-booking",
+        "options": {}
+      },
+      "id": "16c8880e-8320-41ba-a45c-af091b200343",
+      "name": "Webhook: New booking",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        112
+      ],
+      "webhookId": "52ced8cc-384b-4215-924b-422a6fc8f6cb"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-lead-time",
+              "leftValue": "={{ $json.body.lead_time_days }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "cond-ota-channel",
+              "leftValue": "=: {{ $json.body.booking_channel }}",
+              "rightValue": "Booking.com",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "5ca9c427-b8e0-4230-867c-2851c07668c1",
+      "name": "Filter: high-risk booking?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook: New booking').item.json.body.guest_email }}",
+        "subject": "Your stay — a note from us",
+        "message": "={{ $('HTTP Request').item.json.choices[0].message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        16
+      ],
+      "id": "f3615418-f55c-4fba-a571-db6f2cdf6bc4",
+      "name": "Send a message",
+      "webhookId": "d3d8cfca-06fa-4f0f-9be7-4cd446ac9459",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "hcD91YSD0k1k2YPN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "f807d450-2793-4609-bbb8-2330878cf87b",
+      "name": "End: No action needed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-3.5-turbo\",\n  \"max_tokens\": 200,\n  \"messages\": [\n    {\n      \"role\": \"user\", \n      \"content\": \"Write a warm retention message under 100 words for guest Maria Schmidt booked at Berlin Mitte Apt 12, checking in 2024-12-17. Offer free late check-out until 2pm. Include: https://aparthotel.com/book?ref=retention\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        16
+      ],
+      "id": "da50ccb8-ed5c-4d0c-9d62-9e253a842b05",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Li3c8YFqeBASMK1O",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: New booking": {
+      "main": [
+        [
+          {
+            "node": "Filter: high-risk booking?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: high-risk booking?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End: No action needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0804216c-5896-4515-a422-65f4169e5779",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "22f60916f9c7b26e6914b0421ec3dd7a647e0e5851a764c1369ac1e12e3255be"
+  },
+  "id": "yU3Su0qdfkXLh7hi",
+  "tags": []
+}

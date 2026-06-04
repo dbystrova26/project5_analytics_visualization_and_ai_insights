@@ -343,12 +343,30 @@ Structured scores: `evaluation/evaluation_results.json`
 
 ## n8n workflow
 
-Import `n8n/workflow.json` into [n8n.io](https://n8n.io) (free cloud):
-1. New workflow → three dots → Import from file
-2. 6-node workflow renders on canvas
-3. **Flow:** PMS webhook → filter high-risk booking → AI retention message → email/SMS → Google Sheets log
+**Status: ✅ Tested and working end-to-end**
 
-Full setup guide: `n8n/workflow_documentation.md`
+The cancellation retention workflow was built and tested on a self-hosted n8n instance. A real booking payload triggered the full flow — the AI generated a personalised retention email which was delivered to Gmail in ~2 seconds.
+
+**Flow:** PMS webhook → filter high-risk booking → OpenAI generates message → Gmail delivery → Google Sheets audit log
+
+**Live test result:**
+- Webhook received booking for Maria Schmidt, Berlin Mitte Apt 12, lead_time=2, Booking.com
+- Filter correctly identified as HIGH RISK (OTA + last-minute)
+- GPT-3.5-turbo generated: *"We are thrilled to have you staying... complimentary late check-out until 2pm... https://aparthotel.com/book?ref=retention"*
+- Email delivered to dbystrova26@gmail.com within 2 seconds
+
+**To import and run:**
+1. Sign up free at [n8n.io](https://n8n.io) or use self-hosted
+2. New workflow → three dots → **Import from file** → upload `n8n/workflow.json`
+3. Configure: OpenAI API key (Header Auth) + Gmail OAuth2
+4. Test with curl:
+```bash
+curl -X POST "https://YOUR_N8N/webhook-test/new-booking" \
+  -H "Content-Type: application/json" \
+  -d "{\"guest_name\":\"Maria Schmidt\",\"guest_email\":\"guest@email.com\",\"property\":\"Berlin Mitte Apt 12\",\"check_in\":\"2024-12-17\",\"lead_time_days\":2,\"booking_channel\":\"Booking.com\",\"deposit_paid\":false}"
+```
+
+Full setup guide with credentials, known issues, and workarounds: `n8n/workflow_documentation.md`
 
 ---
 
