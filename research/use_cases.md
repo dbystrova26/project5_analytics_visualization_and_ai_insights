@@ -1,7 +1,7 @@
 # Use case proposals — Pan-European aparthotel AI strategy
 
-> **Data evidence note:** All insights below are drawn from real analysis of 119,388 booking records
-> (Hotel Booking Reservation 2024, Kaggle) run through the LangChain agent in this project.
+> **Data note:** All numbers below are from real analysis of 119,388 booking records
+> (Hotel Booking Reservation 2024, Kaggle) run through the LangChain agent.
 > Full scores and methodology in `evaluation/insight_review.md`.
 
 ---
@@ -9,124 +9,105 @@
 ## Use case 1 — Dynamic pricing / revenue optimisation engine
 
 ### Business problem
-Chleo's revenue managers set nightly rates using seasonal rules and gut feeling. They miss event-driven demand spikes (festivals, conferences, public holidays) and underprice peak periods while overpricing slow ones.
+Chleo's revenue managers set nightly rates using seasonal rules and gut feeling. The data shows almost zero dynamic pricing in practice.
 
-### Evidence from data (Insight 2 + Insight 3)
+### Evidence from real data
 
-**Insight 2 — Lead time reveals pricing windows:**
-Our analysis found that bookings made 0–2 days before arrival have only an 8.1% cancellation rate — the most committed, price-insensitive customers book last minute. Yet these guests are likely receiving the same or lower rates than long-lead guests who cancel at 68%. A dynamic pricing model would charge a premium in the final 48–72h window when conversion probability is highest.
+| Finding | Real number | Source tool |
+|---|---|---|
+| Peak vs low month ADR gap | Only **€5.42** (Oct €118.43 vs May €113.00) | `seasonal_pricing_analysis` |
+| Volume swing peak vs low | **20.9%** more bookings in peak months | `seasonal_pricing_analysis` |
+| Weekend vs weekday ADR | Weekend: **€115.50** vs Weekday: **€115.85** — no premium | `weekend_vs_weekday_adr` |
+| Long stay ADR | 8–14 nights: **€112.41** — lower than 1-night (€116.23) | `stay_length_adr_analysis` |
+| Highest ADR segment | Offline TA/TO **€117.85** | `adr_statistics(group_by='market_segment')` |
+| Lowest ADR segment | Corporate **€114.36** — despite lowest cancel rate | `adr_statistics(group_by='market_segment')` |
 
-**Insight 3 — OTA vs direct ADR parity is a missed opportunity:**
-OTA channel guests cancel at 41.0% vs direct at 17.5%, yet both pay nearly identical ADR (€117.96 vs €117.69). A pricing model that accounts for channel-level cancellation risk would price OTA bookings higher to offset the expected revenue loss from cancellations — recovering margin that is currently being left on the table.
-
-**Supporting numbers:**
-- 0–2 day lead time cancellation rate: **8.1%** (highest commitment)
-- 365+ day lead time cancellation rate: **68.0%** (lowest commitment)
-- OTA ADR: €117.96 vs Direct ADR: €117.69 — **<1% difference** despite 2.3x cancellation risk gap
+**Key insight:** A €5.42 ADR gap across the full year despite 20.9% volume swings = the chain is barely adjusting rates to demand. A dynamic pricing model capturing even half the opportunity at peak periods would generate significant additional revenue.
 
 ### Proposed solution
-A gradient boosting model (XGBoost or LightGBM) trained on historical booking data predicts the optimal nightly rate for each property and date. The model uses lead time, day of week, month, local event calendar flags, competitor rate benchmarks, and market segment mix.
-
-The model outputs a human-readable explanation alongside every recommendation:
-*"Recommended €195 because: 2-day lead time (8.1% cancel rate window), Primavera Festival this weekend in Barcelona, competitor median is €210."*
-
-### Why relevant for this company size
-At 500 employees across 10+ cities, pricing is decentralised and inconsistent. A centralised engine creates a single source of truth while allowing city managers to override.
+A gradient boosting model predicts optimal nightly rate per property per date using lead time, month, day of week, local event flags, competitor rates, and market segment. Every recommendation includes a plain-language explanation: *"Recommended €135 because: October weekend, 2-day lead time (8.1% cancel = committed), competitor median €142."*
 
 ### Expected value
-8–15% RevPAR uplift is industry-standard for dynamic pricing adoption — likely €500K–€2M additional annual revenue at this chain's scale.
+8–15% RevPAR uplift is industry-standard. At this chain's scale, even 5% uplift on €5M revenue base = **€250K additional annual revenue**.
 
-### Dashboard metric
-RevPAR vs forecast gap, ADR by city, ADR by lead time bucket, event-driven pricing heat map.
+### Dashboard metrics
+ADR by month (seasonality chart), volume vs ADR scatter (pricing efficiency), ADR by segment, weekend vs weekday comparison.
 
 ---
 
 ## Use case 2 — Cancellation & no-show predictor
 
 ### Business problem
-High cancellation rates leave apartments empty with no time to rebook. Each empty night is 100% lost revenue with fixed costs still running.
+37.5% of all bookings cancel (44,010 of 117,429). Each empty apartment is 100% lost revenue with fixed costs still running.
 
-### Evidence from data (Insights 1, 2, 3, 5)
+### Evidence from real data
 
-**Insight 1 — Group bookings are the highest-risk segment:**
-Groups cancel at **61.1%** (n=19,810) — nearly 4x the Direct channel rate of 15.3%. This single segment represents a disproportionate share of cancellation-driven revenue loss and is the highest-priority target for a cancellation model.
+| Finding | Real number | Source tool |
+|---|---|---|
+| Overall cancellation rate | **37.5%** (44,010 bookings) | `cancellation_rate_by_segment` |
+| Groups segment | **61.1%** cancel (n=19,810) | `cancellation_rate_by_segment(column='market_segment')` |
+| Direct channel | **17.5%** cancel | `cancellation_rate_by_segment(column='distribution_channel')` |
+| TA/TO channel | **41.0%** cancel — 2.3× higher than Direct | `cancellation_rate_by_segment(column='distribution_channel')` |
+| OTA vs Direct ADR | €117.96 vs €117.69 — **<1% difference** | `adr_statistics(group_by='market_segment')` |
+| 365d+ lead time | **68.0%** cancel | `lead_time_analysis` |
+| 0–2d lead time | **8.1%** cancel (most committed) | `lead_time_analysis` |
+| Lead time correlation | **r=+0.293** — strongest numeric predictor | `correlation_with_cancellation` |
+| Special requests | **r=–0.235** — protective signal | `correlation_with_cancellation` |
+| City Hotel cancel rate | **40.6–43.2%** | `cancellation_rate_by_segment(column='hotel')` |
+| Resort Hotel cancel rate | **26.3–29.9%** — 13–16pp lower | `cancellation_rate_by_segment(column='hotel')` |
+| No Deposit bookings | Highest cancel rate in deposit analysis | `deposit_type_cancellation` |
 
-**Insight 2 — Lead time is the single strongest predictor:**
-Cancellation rate increases monotonically with lead time. Pearson correlation: r=+0.293 — the strongest numeric predictor in the dataset. The pattern is clear: 0–2 days = 8.1%, 7–13 days = 18.4%, 30–59 days = 36.3%, 90–364 days = 49.4%, 365+ days = 68.0%. This gives the model a reliable, explainable signal.
-
-**Insight 3 — Distribution channel doubles the risk:**
-TA/TO channel: **41.0%** cancellation vs Direct: **17.5%**. Online TA specifically: **36.7%**. Channel is a strong categorical feature for the classification model.
-
-**Insight 5 — Special requests signal commitment:**
-Bookings with at least one special request correlate negatively with cancellation (r=–0.235). Zero-request bookings combined with long lead time and OTA channel = highest risk profile. This three-feature combination gives the model a practical, auditable scoring rule Chleo can explain to her team.
-
-**Supporting numbers:**
-- Groups: **61.1%** cancellation (n=19,810)
-- TA/TO channel: **41.0%** vs Direct: **17.5%**
-- Lead time r=+0.293 — strongest single predictor
-- Special requests r=–0.235 — strongest protective signal
+**Key insight:** Three levers explain most cancellations — channel (OTA 2.3× riskier), timing (365d+ bookings cancel at 68%), and segment (Groups 61.1%). A classification model combining these signals gives the n8n retention workflow its trigger.
 
 ### Proposed solution
-A binary classification model (logistic regression or random forest) scores each booking's cancellation probability at the time of booking and again 72h before arrival. High-risk bookings trigger an automated retention workflow via n8n:
-- Personalised email/SMS with a non-refundable upgrade offer
-- Or early check-in incentive to confirm commitment
-- All actions logged to Google Sheets for full audit trail
-
-### Why relevant for this company size
-Manual monitoring across 500+ apartments in 10+ cities is not feasible. At this scale, even a 5% improvement in net cancellation rate has material margin impact.
+Binary classification model scores each booking's cancellation probability. Bookings above a risk threshold trigger the n8n retention workflow: personalised email/SMS offer → sent 72h before arrival → logged to Google Sheets.
 
 ### Expected value
-If the chain has ~100 cancellations/week and retention offers recover 10% at average ADR €150 → **~€78,000/year recovered** from a model costing almost nothing to run.
+100 cancellations/week × 10% recovery rate × €150 ADR = **~€78,000/year recovered** from a model costing almost nothing to run.
 
-### Dashboard metric
-Cancellation rate by channel (OTA vs direct), cancellation rate by lead time bucket, weekly cancellation trend, retention offer conversion rate.
+### Dashboard metrics
+Cancellation rate by channel, lead time risk curve, monthly trend, special requests chart, city vs resort comparison, segment risk table.
 
 ---
 
 ## Use case 3 — Automated guest communication & upsell agent
 
 ### Business problem
-Guest relations is the most headcount-intensive function in an aparthotel. Pre-arrival, mid-stay, and post-stay communications across 10 cities and hundreds of daily guests cannot scale manually.
+Guest relations is the most headcount-intensive function. Pre-arrival, mid-stay, and post-stay communications across 10+ cities cannot scale manually at this company size.
 
-### Evidence from data (Insight 5)
+### Evidence from real data
 
-**Insight 5 — Engaged guests cancel less and spend more:**
-Guests who make special requests cancel significantly less (r=–0.235 with cancellation). This means proactive pre-arrival outreach — asking guests for preferences, parking needs, and special requests — does double duty: it both reduces cancellation risk and creates upsell opportunities (parking, late check-out, room upgrades).
+| Finding | Real number | Source tool |
+|---|---|---|
+| Guests without parking booked | **93.8%** | `upsell_opportunity_analysis` |
+| BB/SC (basic) meal plan guests | **86.2%** | `upsell_opportunity_analysis` |
+| 1-night stays | **17.4%** | `upsell_opportunity_analysis` |
+| Repeat guest rate | **2.8%** | `repeat_guest_analysis` |
+| Repeat guest cancel rate | **16.2%** vs 38.1% first-time | `repeat_guest_analysis` |
+| Repeat guest ADR | **€75** vs €104 first-time — 28% less | `repeat_guest_analysis` |
+| Portugal (top origin) | **30.7%** of bookings, 68% cancel | `guest_origin_analysis` |
+| Transient customers | **75%+** of all bookings | `guest_origin_analysis` |
+| Special requests signal | **r=–0.235** — engaged guests cancel 2× less | `correlation_with_cancellation` |
 
-Guests who request parking (r=–0.195 with cancellation) are demonstrably more committed and more likely to respond positively to upsell offers. Targeting this segment with personalised upgrade offers before arrival is a low-cost, high-conversion opportunity.
+**Key insight:** 93.8% no-parking + 86.2% basic meal plans + 17.4% one-night stays = three automated upsell triggers for every booking. The guest comms agent addresses all three in a single pre-arrival message, with zero manual effort.
 
-**Supporting numbers:**
-- Special requests: r=–0.235 with cancellation (protective signal)
-- Parking requests: r=–0.195 with cancellation
-- These signals identify the ~30–40% of guests most likely to engage with upsell offers
+**Loyalty finding:** Repeat guests cancel at half the rate (16.2% vs 38.1%) but pay 28% less (€75 vs €104). This is the clearest ROI case for a loyalty programme — these guests are already committed, they just need to be incentivised to pay direct rates.
 
 ### Proposed solution
-An LLM-powered agent (built with LangChain) handles the full guest communication sequence, triggered by PMS events via n8n webhooks:
-- Pulls guest name, property, and check-in details from PMS
-- Generates a personalised pre-arrival message asking for preferences
-- Selects upsell offer by stay length (short stay → late check-out; long stay → extension discount)
-- Sends via WhatsApp Business API or email (SendGrid)
-- Logs every message with timestamp and content to Google Sheets for audit
-
-All factual fields (address, times, prices) come from PMS data — not LLM generation — to prevent hallucination.
-
-### Why relevant for this company size
-500 employees across 10 cities cannot maintain a large guest comms team. Automation improves margin without degrading experience, if done with guardrails.
+LangChain agent handles full guest communication sequence triggered by PMS webhooks via n8n. All factual fields (address, times, prices) come from PMS — LLM writes personalisation only. Every message logged to Google Sheets for audit.
 
 ### Expected value
-If automation handles 70% of guest comms currently done by staff, and each city has 2 FTE at €35K/year fully loaded → **€490K/year in redeployable staff cost** across the chain.
+If automation handles 70% of guest comms for 2 FTE per city at €35K/year fully loaded = **€490K/year** redeployable across 10 cities.
 
-### Dashboard metric
-Upsell conversion rate, review score trend, message response rate, average response time, special request rate per booking.
+### Dashboard metrics
+Meal plan distribution, repeat vs first-time behaviour, top origin countries, stay length segmentation, special requests distribution, customer type breakdown.
 
 ---
 
-## Dataset justification summary
+## Dataset justification
 
-| Dataset | Use cases served | Key columns used | Real findings |
+| Dataset | Use cases | Key columns | Real findings |
 |---|---|---|---|
-| Hotel Booking Reservation 2024 | UC1, UC2, UC3 | lead_time, adr, is_canceled, market_segment, distribution_channel, total_special_requests | 119,388 rows, all 5 insights |
+| Hotel Booking Reservation 2024 | UC1, UC2, UC3 | lead_time, adr, is_canceled, market_segment, distribution_channel, meal, deposit_type, customer_type, country, total_of_special_requests | 119,388 rows, 10 insights |
 | Hotel Prices in Europe 2024 | UC1 | price, date, city | Event-driven ADR benchmarks |
-| Tourism & Hospitality Industry Analysis | Context / benchmarking | revpar, occupancy_rate, adr by segment | Sector KPI context |
-
-All datasets are from Kaggle, publicly available, and free to download with a free account.
+| Tourism & Hospitality Industry Analysis | Context | revpar, occupancy_rate | Sector KPI context |

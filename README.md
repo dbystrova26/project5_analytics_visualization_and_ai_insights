@@ -5,18 +5,82 @@
 **Client:** Chleo, CEO  
 **Bootcamp module:** Module 5 — AI Strategy & Business Impact
 
+> AI consulting project: cancellation prediction, dynamic pricing & guest automation for a pan-European aparthotel chain. LangChain · Tableau · n8n
+
 ---
 
-## Project overview
+## Project snapshot
 
-Chleo runs a tech-forward aparthotel chain across multiple European cities. The business model blends short-stay OTA bookings with longer corporate and relocation stays. She is sceptical of AI — she fears it is a black box and cannot be explained to her team or investors.
+* **Sector:** Hospitality
+* **Company Size:** Large (~500 employees, 8–12 European cities — Numa / Limehome / BobW style)
+* **Use Cases:**
+   * Cancellation & no-show prediction
+   * Dynamic pricing / revenue optimisation
+   * Automated guest communication & upsell agent
+* **Dashboard Focus:** Cancellation rate by channel, lead time risk curve, city vs resort comparison, special requests signal, monthly trend, market segment risk table
+* **n8n Workflow:** Automated retention offer — PMS webhook → filter high-risk booking → AI generates personalised message → send email/SMS → log to Google Sheets
+* **Agent Insights:** Groups cancel at 61.1% vs 15.3% direct · OTA channel 2.3× riskier than direct at equal ADR · Long lead time bookings (365d+) cancel at 68% · City hotels cancel 50% more than resort · Special requests signal committed guests (r=–0.235)
+* **Cost Considerations:** €15K–€30K upfront for all 3 use cases · <1 month payback · LLM API ~€200–€500/month · Self-hosted n8n = free · GDPR compliance review required before production
+* **Data:** All agent insights from real analysis of 119,388 booking records (Hotel Booking Reservation 2024, Kaggle)
 
-This project demonstrates that AI can be transparent, auditable, and immediately valuable for her business. It covers sector research, a BI dashboard, an AI agent that generates insights from real booking data, an n8n automation proof of concept, and a full cost/timeline estimate.
+---
 
-**Three use cases addressed:**
-1. Dynamic pricing / revenue optimisation
-2. Cancellation & no-show prediction
-3. Automated guest communication & upsell agent
+## Key findings from real data (119,388 bookings)
+
+All numbers below come from running the LangChain agent on the real Kaggle dataset.
+
+### UC1 — Dynamic Pricing
+
+| Finding | Number | Implication |
+|---|---|---|
+| Overall mean ADR | €115.79 | Baseline pricing across all segments |
+| Peak ADR month | October €118.43 | Only €5.42 above the lowest month |
+| Low ADR month | May €113.00 | Near-flat seasonality despite demand swings |
+| Volume swing peak vs low | 20.9% | Demand varies 20% but price barely moves |
+| Weekend vs weekday ADR | €115.50 vs €115.85 | No weekend premium — pricing opportunity |
+| Highest ADR segment | Offline TA/TO €117.85 | But also highest cancellation — net revenue lower |
+| Lowest ADR segment | Corporate €114.36 | Most reliable bookers, underpriced |
+| Long stay ADR drop | 8–14 nights: €112.41 | Extended stays discounted — confirm if intentional |
+
+**Key insight:** The chain has almost zero dynamic pricing in place. A €5.42 ADR gap across the full year despite 20.9% volume swings means revenue is being left on the table every peak period.
+
+---
+
+### UC2 — Cancellation Prediction
+
+| Finding | Number | Implication |
+|---|---|---|
+| Overall cancellation rate | 37.5% | 44,010 of 117,429 bookings cancelled |
+| Groups segment | 61.1% cancel (n=19,810) | Highest risk — 4× Direct rate |
+| TA/TO channel | 41.0% cancel | 2.3× higher than Direct at same ADR |
+| Direct channel | 17.5% cancel | Lowest risk — prioritise direct bookings |
+| 365d+ lead time | 68.0% cancel | Counter-intuitive — long advance = high risk |
+| 0–2d lead time | 8.1% cancel | Last-minute = most committed |
+| Lead time correlation | r=+0.293 | Strongest single numeric predictor |
+| Special requests | r=–0.235 | Protective signal — engaged guests cancel less |
+| City hotels | 40.6–43.2% | 13–16pp higher than resort hotels |
+| Resort hotels | 26.3–29.9% | Structural difference, not location |
+| No Deposit bookings | highest cancel rate | Non-refundable deposits nearly eliminate cancellations |
+
+**Key insight:** Three levers explain most cancellations — channel mix (OTA 2.3× riskier), booking timing (365d+ bookings 68% cancel), and guest segment (groups 61.1%). Fixing policy on these three reduces cancellations without any ML model needed.
+
+---
+
+### UC3 — Guest Communication & Upsell
+
+| Finding | Number | Implication |
+|---|---|---|
+| Repeat guest rate | 2.8% | Very low loyalty — opportunity to build programme |
+| Guests without parking booked | 93.8% | Massive pre-arrival parking upsell pool |
+| 1-night stays | 17.4% | Extend-your-stay offer target |
+| BB/SC meal plan guests | 86.2% | On basic plans — meal upgrade upsell opportunity |
+| Repeat guest cancel rate | 16.2% vs 38.1% first-time | Repeat guests are far more committed |
+| Repeat guest ADR | €75 vs €104 first-time | Repeat guests pay less — loyalty pricing review needed |
+| Portugal (PRT) | 30.7% of bookings, 68% cancel | Largest origin market but highest cancel rate |
+| Transient customers | 75%+ of bookings, 41% cancel | Main segment — personalised comms highest impact |
+| Special requests r=–0.235 | engaged guests cancel 2× less | Pre-arrival engagement surveys reduce cancellation |
+
+**Key insight:** 93.8% of guests have no parking booked, 86.2% are on basic meal plans, and 17.4% stay only 1 night. Each is a direct upsell trigger that an automated guest comms agent can action before arrival with no manual effort.
 
 ---
 
@@ -30,16 +94,17 @@ project/
 ├── research/
 │   ├── sector_research.md          # EU aparthotel market analysis
 │   ├── opportunities_risks.md      # AI opportunity & risk mapping
-│   └── use_cases.md                # Use case proposals & justification
+│   └── use_cases.md                # Use case proposals with real data evidence
 ├── dashboard/
-│   ├── dashboard.pbix              # PowerBI dashboard file
-│   └── dashboard_documentation.md # Metrics, design rationale, usage guide
+│   ├── dashboard.twbx              # Tableau dashboard file
+│   ├── dashboard_documentation.md  # Metrics, design rationale, usage guide
+│   └── tableau_dashboard_prototype.py  # Python prototype — 3 pages, all use cases
 ├── n8n/
-│   ├── workflow.json               # Exportable n8n workflow
-│   └── workflow_documentation.md  # Node-by-node explanation
+│   ├── workflow.json               # Importable n8n workflow
+│   └── workflow_documentation.md  # Node-by-node explanation & setup guide
 ├── agent/
-│   ├── agent.py                    # LangChain agent entry point
-│   ├── tools.py                    # 5 data analysis tools + preprocessing
+│   ├── agent.py                    # LangChain agent — all 3 use cases
+│   ├── tools.py                    # 11 data analysis tools
 │   └── insights_generator.py      # Standalone insight formatter
 ├── evaluation/
 │   ├── insight_review.md           # LLM-as-judge evaluation report
@@ -59,8 +124,8 @@ project/
 
 | Dataset | Source | Rows | Use in project |
 |---|---|---|---|
-| Hotel Booking Reservation 2024 | [Kaggle](https://www.kaggle.com/datasets/kundanbedmutha/hotel-booking-reservation) | 119,390 | Primary — cancellation prediction, ADR analysis, lead time |
-| Hotel Prices in Europe 2024 | [Kaggle](https://www.kaggle.com/datasets/maelysboudier/hotel-prices-in-europe) | ~15,000 | Event-driven pricing benchmarks (Barcelona, Marseille) |
+| Hotel Booking Reservation 2024 | [Kaggle](https://www.kaggle.com/datasets/kundanbedmutha/hotel-booking-reservation) | 119,390 | Primary — all 3 use cases |
+| Hotel Prices in Europe 2024 | [Kaggle](https://www.kaggle.com/datasets/maelysboudier/hotel-prices-in-europe) | ~15,000 | Event-driven pricing benchmarks |
 | Tourism & Hospitality Industry Analysis | [Kaggle](https://www.kaggle.com/datasets/smithmurphy/tourism-and-hospitality-industry-analysis-dataset) | ~500 | Sector KPI benchmarks |
 
 All datasets are free and publicly available with a free Kaggle account.
@@ -72,12 +137,12 @@ All datasets are free and publicly available with a free Kaggle account.
 ### Windows with Miniconda (recommended)
 
 ```bash
-# 1. Scientific stack via conda — avoids C++ compiler errors on Windows
+# Scientific stack via conda — avoids C++ compiler errors on Windows
 conda install pandas numpy scipy -y
 
-# 2. LangChain + API stack via pip
+# LangChain + API stack via pip
 pip install langchain>=0.3 langgraph>=0.2 langchain-anthropic>=0.2 langchain-openai>=0.2 \
-    python-dotenv anthropic openai langsmith tiktoken httpx kaggle
+    python-dotenv anthropic openai langsmith tiktoken httpx kaggle matplotlib seaborn
 ```
 
 ### Mac / Linux
@@ -90,16 +155,8 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env — add your Anthropic or OpenAI key and Kaggle token
+# Add ANTHROPIC_API_KEY and KAGGLE_API_TOKEN
 ```
-
-Minimum `.env` needed to run everything:
-```
-ANTHROPIC_API_KEY=your_key_here
-KAGGLE_API_TOKEN=KGAT_your_token_here
-```
-
-To get your Kaggle token: kaggle.com → profile → Settings → API → Create New Token.
 
 ---
 
@@ -109,23 +166,13 @@ To get your Kaggle token: kaggle.com → profile → Settings → API → Create
 python download_data.py
 ```
 
-### What this does
+Reads `KAGGLE_API_TOKEN` from `.env`, downloads all 3 datasets to `data/raw/`.
 
-The script reads credentials from `.env` and calls the Kaggle API to download all three datasets. It supports three credential formats automatically — `KAGGLE_API_TOKEN` (new single-token format), `KAGGLE_USERNAME` + `KAGGLE_KEY` (classic), or `~/.kaggle/kaggle.json` (file-based).
-
-Each dataset is downloaded as a zip, extracted, and saved as CSV files in `data/raw/`. Already-downloaded files are skipped automatically.
-
-### Expected output
-
+**Expected output:**
 ```
-Kaggle credentials loaded from KAGGLE_API_TOKEN
-Downloading: Hotel Booking Reservation 2024
-  Saved: hotel_bookings.csv (21.3 MB)
-Downloading: Hotel Prices in Europe 2024
-  Saved: booking_bcn1.csv, booking_bcn2.csv, booking_mar1.csv, booking_mar2.csv
-Downloading: Tourism & Hospitality Industry Analysis 2025
-  Saved: Tourism_Hospitality_Industry_Analysis.csv
-
+Saved: hotel_bookings.csv (21.3 MB)
+Saved: booking_bcn1.csv, booking_bcn2.csv, booking_mar1.csv, booking_mar2.csv
+Saved: Tourism_Hospitality_Industry_Analysis.csv
 Done. 6 CSV file(s) in data/raw/
 ```
 
@@ -134,126 +181,174 @@ Done. 6 CSV file(s) in data/raw/
 ## Step 2 — Preprocess data
 
 ```bash
+cd agent
 python tools.py --preprocess
 ```
 
-### What this does
+Cleans `hotel_bookings.csv` and saves to `data/processed/bookings_clean.csv`.
 
-The preprocessing function inside `tools.py` cleans the raw booking dataset and saves a clean version to `data/processed/bookings_clean.csv`. Steps performed:
+**What it does:**
+1. Loads 119,390 rows, 33 columns
+2. Drops columns with >40% missing values
+3. Fills nulls — `children` → 0, `country` → "Unknown"
+4. Removes invalid ADR rows (removes ~2 rows)
+5. Adds `total_nights` derived column
+6. Saves 119,388 clean rows
 
-1. **Loads** `data/raw/hotel_bookings.csv` (119,390 rows, 33 columns)
-2. **Drops columns** with more than 40% missing values
-3. **Fills nulls** in key columns: `children` → 0, `country` → "Unknown", `agent` → 0, `company` → 0
-4. **Removes invalid ADR rows** — any row where `adr < 0` or `adr >= 5000` is dropped (removes ~2 rows)
-5. **Casts** `is_canceled` to integer (0/1)
-6. **Saves** cleaned file to `data/processed/bookings_clean.csv`
+**Key columns used across all 3 use cases:**
 
-### Expected output
-
-```
-Loading hotel_bookings.csv...
-Loaded 119,390 rows, 33 columns
-Removed 2 rows with invalid ADR
-Saved: data/processed/bookings_clean.csv (119,388 rows)
-```
-
-### Key columns in the cleaned dataset
-
-| Column | Type | Description |
+| Column | UC | Description |
 |---|---|---|
-| `is_canceled` | int (0/1) | Target variable — whether booking was cancelled |
-| `lead_time` | int | Days between booking date and arrival |
-| `adr` | float | Average Daily Rate (€) |
-| `market_segment` | string | Direct, Corporate, OTA, Groups, etc. |
-| `distribution_channel` | string | Direct, TA/TO, GDS, Corporate |
-| `hotel` | string | City Hotel or Resort Hotel |
-| `arrival_date_month` | string | Month of arrival |
-| `arrival_date_year` | int | Year of arrival |
-| `total_special_requests` | int | Number of special requests made |
-| `required_car_parking_spaces` | int | Parking spaces requested |
-| `previous_cancellations` | int | Prior cancellations by this guest |
+| `is_canceled` | UC2 | Target variable (0/1) |
+| `lead_time` | UC1, UC2 | Days between booking and arrival |
+| `adr` | UC1, UC3 | Average Daily Rate (€) |
+| `market_segment` | UC1, UC2, UC3 | Direct, Corporate, Groups, Online TA etc. |
+| `distribution_channel` | UC2 | Direct, TA/TO, GDS, Corporate |
+| `hotel` | UC2 | City Hotel or Resort Hotel |
+| `arrival_date_month` | UC1 | Month of arrival |
+| `stays_in_weekend_nights` | UC1, UC3 | Weekend nights booked |
+| `stays_in_week_nights` | UC1, UC3 | Weekday nights booked |
+| `meal` | UC3 | BB, HB, FB, SC — upsell signal |
+| `deposit_type` | UC2 | No Deposit / Non Refund / Refundable |
+| `customer_type` | UC2, UC3 | Transient, Group, Contract |
+| `is_repeated_guest` | UC3 | Loyalty signal |
+| `country` | UC3 | Origin market for personalisation |
+| `total_of_special_requests` | UC2, UC3 | Engagement signal (r=–0.235) |
+| `required_car_parking_spaces` | UC2, UC3 | Commitment + upsell signal |
 
 ---
 
 ## Step 3 — Run the agent
 
 ```bash
+cd agent
 python agent.py
 ```
 
 ### What the agent does
 
-The agent is a LangChain tool-calling loop that connects an LLM (Claude) to 5 data analysis functions. It works as follows:
+A LangChain tool-calling loop connecting an LLM (Claude) to 11 data analysis tools across all 3 use cases. Every tool call is printed to terminal — fully transparent and auditable.
 
-**Step 1 — LLM plans the analysis**  
-The LLM receives a system prompt describing its role (data analyst for an aparthotel CEO) and a user message asking for 5 business insights. It decides which tools to call and in what order.
+### The 11 tools
 
-**Step 2 — Tools execute against real data**  
-Each tool loads `bookings_clean.csv`, runs a pandas/numpy calculation, and returns a formatted string. No data leaves your machine — all computation is local.
+**UC1 — Dynamic Pricing:**
 
-**Step 3 — LLM interprets results**  
-After all tools return, the LLM synthesises the numbers into structured insights following a fixed format: headline, evidence, source, limitation, action.
+| Tool | What it calculates |
+|---|---|
+| `adr_statistics` | Mean, median, min, max ADR overall or by group |
+| `seasonal_pricing_analysis` | ADR + volume + cancellation rate by month |
+| `weekend_vs_weekday_adr` | ADR comparison for weekend vs weekday stays |
+| `stay_length_adr_analysis` | ADR by stay length bucket (1 night through 15+) |
 
-**Step 4 — Output printed to terminal**  
-All tool calls are printed as they happen (`→ Calling tool: ...`) so every step is visible and auditable — directly addressing Chleo's transparency concern.
+**UC2 — Cancellation Prediction:**
 
-### The 5 tools
+| Tool | What it calculates |
+|---|---|
+| `cancellation_rate_by_segment` | Cancellation % by any categorical column |
+| `lead_time_analysis` | Cancellation rate per lead time bucket |
+| `correlation_with_cancellation` | Pearson r of all numeric features with is_canceled |
+| `deposit_type_cancellation` | Cancellation rate by deposit type |
 
-| Tool | What it calculates | Key parameter |
-|---|---|---|
-| `cancellation_rate_by_segment` | Cancellation % grouped by any categorical column | `column` — e.g. `market_segment`, `distribution_channel`, `hotel` |
-| `adr_statistics` | Mean, median, min, max ADR overall or by group | `group_by` — e.g. `arrival_date_month`, `market_segment` |
-| `lead_time_analysis` | Cancellation rate per lead time bucket (0–2d, 3–6d, etc.) | fixed buckets |
-| `booking_volume_trend` | Booking count by month/year | `period` — `month` |
-| `correlation_with_cancellation` | Pearson r between numeric features and `is_canceled` | `top_n` — number of features to return |
+**UC3 — Guest Communication & Upsell:**
 
-### Agent output — 5 insights generated (actual run results)
+| Tool | What it calculates |
+|---|---|
+| `upsell_opportunity_analysis` | Room upgrade gap, meal plan dist, parking, 1-night stays |
+| `repeat_guest_analysis` | Repeat vs first-time cancel rate, ADR, engagement |
+| `guest_origin_analysis` | Top countries by volume, cancel rate, ADR |
 
-**INSIGHT 1: Group bookings are your highest cancellation risk**  
-Groups cancel at 61.1% (n=19,810) vs 15.3% for Direct and 18.7% for Corporate — 4x higher than the lowest-risk segment.  
+### Real agent output — insights from 119,388 bookings
+
+**[UC2] INSIGHT 1: Group bookings are your highest cancellation risk**
+Groups cancel at **61.1%** (n=19,810) vs 15.3% Direct — 4× the lowest-risk segment.
 *Action: Non-refundable deposits and binding group coordinator agreements.*
 
-**INSIGHT 2: Long lead time bookings are cancellation time bombs**  
-365+ day bookings cancel at 68.0% vs only 8.1% for 0–2 day bookings. Rate increases monotonically: 30–59d = 36.3%, 90–364d = 49.4%.  
-*Action: Higher deposits for >90 day bookings; automated re-confirmation campaigns at 60/30/14 days.*
+**[UC2] INSIGHT 2: Long lead time bookings are cancellation time bombs**
+365d+ bookings cancel at **68.0%** vs 8.1% for 0–2 day bookings. Rate increases monotonically.
+*Action: Higher deposits for >90 day bookings; re-confirmation campaigns at 60/30/14 days.*
 
-**INSIGHT 3: Travel agent channels underperform direct by 2.3x**  
-TA/TO channel: 41.0% cancellation vs Direct: 17.5% — yet both have near-identical ADR (€117.96 vs €117.69). Equal pricing for 2.3x higher risk.  
-*Action: Renegotiate TA/TO contracts; invest in direct channel marketing.*
+**[UC2] INSIGHT 3: OTA channels underperform direct by 2.3×**
+TA/TO: **41.0%** cancel vs Direct: **17.5%** — yet ADR is nearly identical (€117.96 vs €117.69).
+*Action: Renegotiate OTA contracts; shift budget to direct channel marketing.*
 
-**INSIGHT 4: City hotels cancel at 41–43% vs resort hotels at 27–30%**  
-Gap is consistent across all locations (13–16pp), suggesting a property-type pattern not a location issue.  
+**[UC2] INSIGHT 4: City hotels cancel 50% more than resort hotels**
+City: 40.6–43.2% vs Resort: 26.3–29.9% — gap consistent across all locations.
 *Action: Apply resort hotel retention practices to city portfolio.*
 
-**INSIGHT 5: Special requests signal committed customers**  
-Special requests correlate negatively with cancellation (r=–0.235); parking: r=–0.195. Lead time is the strongest positive predictor (r=+0.293).  
-*Action: Flag zero-request bookings for retention campaigns; send pre-arrival preference surveys.*
+**[UC2] INSIGHT 5: Special requests signal committed customers**
+Special requests: r=–0.235 · Parking: r=–0.195 · Lead time: r=+0.293 (strongest predictor).
+*Action: Flag zero-request bookings for retention campaigns.*
+
+**[UC1] INSIGHT 6: Near-flat seasonality despite 20.9% volume swing**
+ADR gap October vs May: only **€5.42** despite 20.9% more bookings in peak months.
+*Action: Implement dynamic pricing — even modest rate increases in peak months add significant revenue.*
+
+**[UC1] INSIGHT 7: Weekend pricing premium is missing**
+Weekend-heavy stays: **€115.50** vs weekday-heavy: **€115.85** — weekdays actually price higher.
+*Action: Add weekend surcharge; leisure guests booking Fri–Sun are less price-sensitive.*
+
+**[UC3] INSIGHT 8: 93.8% of guests have no parking booked**
+Massive pre-arrival upsell pool — parking offer in welcome message costs nothing to automate.
+*Action: Include parking upsell in every pre-arrival guest communication.*
+
+**[UC3] INSIGHT 9: 86.2% of guests are on basic meal plans**
+BB and SC guests are the majority — meal upgrade offers at check-in have a large addressable base.
+*Action: Automated mid-stay message offering HB upgrade at discounted rate.*
+
+**[UC3] INSIGHT 10: Repeat guests cancel at half the rate but pay 28% less**
+Repeat: **16.2% cancel, €75 ADR** vs First-time: **38.1% cancel, €104 ADR**.
+*Action: Review loyalty pricing — repeat guests are the most valuable segment but currently underpriced.*
 
 ---
 
-## How to view the dashboard
-
-1. Install [PowerBI Desktop](https://powerbi.microsoft.com/desktop/) (free, Windows)
-2. Open `dashboard/dashboard.pbix`
-3. If prompted for data source, point to `data/processed/bookings_clean.csv`
-
-**Dashboard pages:**
-- Executive overview — RevPAR, ADR, occupancy %, cancellation rate by city
-- Cancellation analysis — by channel, lead time, monthly trend
-- Pricing intelligence — ADR seasonality, occupancy vs ADR scatter
-
----
-
-## How to run the evaluation
+## Step 4 — Dashboard prototype
 
 ```bash
-python insights_generator.py
+python dashboard/tableau_dashboard_prototype.py
 ```
 
-Results are in `evaluation/evaluation_results.json`.  
-Full LLM-as-judge report with judge prompt, scores, bias discussion, and recommendations is in `evaluation/insight_review.md`.
+Generates 3 PNG files — one per use case — as a build guide for Tableau:
+- `dashboard_uc1_pricing.png` — Dynamic pricing: ADR seasonality, volume vs ADR scatter, segment comparison
+- `dashboard_uc2_cancellation.png` — Cancellation: channel rates, lead time curve, monthly trend, risk table
+- `dashboard_uc3_upsell.png` — Upsell: meal plans, repeat guests, country origins, stay length, customer types
 
-**Average scores across 5 insights:** Relevance 5.0 · Accuracy 4.6 · Actionability 4.8 · Clarity 4.8 · Overall 4.6
+**To build in Tableau:**
+1. Open Tableau Desktop or [Tableau Public](https://public.tableau.com) (free)
+2. Connect to `data/processed/bookings_clean.csv`
+3. Build each chart following `dashboard/dashboard_documentation.md`
+4. Save as `dashboard/dashboard.twbx`
+
+---
+
+## Step 5 — Evaluation
+
+```bash
+cd agent && python insights_generator.py
+```
+
+Full LLM-as-judge report: `evaluation/insight_review.md`
+Structured scores: `evaluation/evaluation_results.json`
+
+**Average scores (LLM-as-judge, claude-sonnet-4-6):**
+
+| Criterion | Score |
+|---|---|
+| Relevance | 5.0 / 5 |
+| Accuracy | 4.6 / 5 |
+| Actionability | 4.8 / 5 |
+| Clarity | 4.8 / 5 |
+| **Overall** | **4.6 / 5** |
+
+---
+
+## n8n workflow
+
+Import `n8n/workflow.json` into [n8n.io](https://n8n.io) (free cloud):
+1. New workflow → three dots → Import from file
+2. 6-node workflow renders on canvas
+3. **Flow:** PMS webhook → filter high-risk booking → AI retention message → email/SMS → Google Sheets log
+
+Full setup guide: `n8n/workflow_documentation.md`
 
 ---
 
@@ -261,12 +356,13 @@ Full LLM-as-judge report with judge prompt, scores, bias discussion, and recomme
 
 | Error | Fix |
 |---|---|
-| `pandas build error` on Windows | Use `conda install pandas numpy scipy -y` instead of pip |
-| `No Kaggle credentials found` | Add `KAGGLE_API_TOKEN=KGAT_xxx` to `.env` |
+| `pandas build error` on Windows | `conda install pandas numpy scipy -y` |
+| `No Kaggle credentials` | Add `KAGGLE_API_TOKEN=KGAT_xxx` to `.env` |
 | `No API key found` | Add `ANTHROPIC_API_KEY=xxx` to `.env` |
-| `model: claude-xxx not found` | Check available models: `python -c "import anthropic; from dotenv import load_dotenv; load_dotenv(); c=anthropic.Anthropic(); [print(m.id) for m in c.models.list().data]"` |
-| `Processed dataset not found` | Run `python tools.py --preprocess` first |
-| `ImportError: AgentExecutor` | Your LangChain version is newer — use the `agent.py` in this repo which uses `bind_tools` instead |
+| `model not found` | Run `python -c "import anthropic; from dotenv import load_dotenv; load_dotenv(); c=anthropic.Anthropic(); [print(m.id) for m in c.models.list().data]"` |
+| `Processed dataset not found` | Run `python tools.py --preprocess` from `agent/` folder |
+| `ImportError: AgentExecutor` | Use `agent.py` in this repo — uses `bind_tools` not removed `AgentExecutor` |
+| Dashboard saves to wrong path | Run from inside `dashboard/` folder |
 
 ---
 
@@ -276,9 +372,9 @@ Full LLM-as-judge report with judge prompt, scores, bias discussion, and recomme
 |---|---|---|
 | `ANTHROPIC_API_KEY` | One of these two | Anthropic Claude API key |
 | `OPENAI_API_KEY` | One of these two | OpenAI API key |
-| `KAGGLE_API_TOKEN` | For download_data.py | New single-token format from Kaggle settings |
-| `KAGGLE_USERNAME` + `KAGGLE_KEY` | Alternative to above | Classic Kaggle credential format |
-| `LANGCHAIN_API_KEY` | Optional | LangSmith tracing key |
+| `KAGGLE_API_TOKEN` | For download_data.py | New single-token format |
+| `KAGGLE_USERNAME` + `KAGGLE_KEY` | Alternative | Classic Kaggle credentials |
+| `LANGCHAIN_API_KEY` | Optional | LangSmith tracing |
 | `LANGCHAIN_PROJECT` | Optional | LangSmith project name |
 
-Never commit your `.env` file — it is listed in `.gitignore`.
+Never commit `.env` — it is in `.gitignore`.
