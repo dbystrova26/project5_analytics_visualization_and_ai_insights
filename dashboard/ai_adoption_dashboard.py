@@ -169,7 +169,7 @@ fig.update_layout(
     plot_bgcolor=C_CARD,
     font=dict(color=C_MUTED, family="'DM Sans', sans-serif"),
     height=900,
-    margin=dict(t=90, b=80, l=70, r=40),
+    margin=dict(t=80, b=80, l=70, r=40),
 )
 
 for ann in fig.layout.annotations:
@@ -193,23 +193,7 @@ fig.update_xaxes(range=[0, 115], row=2, col=1)
 fig.update_yaxes(range=[0, 60], row=2, col=2)
 fig.update_yaxes(range=[0, 20], row=2, col=3)
 
-# KPI annotation strip
-kpis = [
-    ("71%",    "of hospitality professionals\nsay AI is already significant",  C_GREEN),
-    ("$11.1B", "AI hospitality market\nby 2030 (CAGR 57.7%)",                  C_AMBER),
-    ("+17%",   "revenue uplift for\nAI adopters vs non-adopters",              C_GREEN),
-    ("<18 mo", "payback period for\nAI pricing & personalisation",              C_BLUE),
-]
-for i, (val, label, color) in enumerate(kpis):
-    fig.add_annotation(
-        text=f"<b style='font-size:18px;color:{color}'>{val}</b><br>"
-             f"<span style='font-size:9px;color:{C_MUTED}'>{label}</span>",
-        xref="paper", yref="paper",
-        x=0.12 + i * 0.25, y=1.07,
-        showarrow=False, align="center",
-        bgcolor=C_CARD, bordercolor=C_BORDER,
-        borderwidth=1, borderpad=8,
-    )
+# KPI strip removed — numbers are clear from the charts themselves
 
 # Source footnote
 fig.add_annotation(
