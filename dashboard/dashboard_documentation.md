@@ -111,3 +111,47 @@ This dashboard follows the **communication layer** principle from the Module 5 P
 - `screenshots/page1_overview.png`
 - `screenshots/page2_cancellations.png`
 - `screenshots/page3_pricing.png`
+
+---
+
+## Dashboard wireframe and design sketch
+
+**Required by brief Part 2: "Dashboard design wireframe/sketch"**
+
+### Layout wireframe — UC2 Cancellation Dashboard
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  UC2 — Cancellation & No-Show Risk Dashboard                    │
+├──────────────┬──────────────┬──────────────┬────────────────────┤
+│ KPI: 37.5%   │ KPI: 2.3×   │ KPI: 68%     │ KPI: r=+0.293      │
+│ Cancel rate  │ OTA vs Direct│ 365d+ risk   │ Lead time corr.    │
+├──────────────┴──────────────┴──────────────┴────────────────────┤
+│                           │                │                     │
+│  Cancellation by Channel  │  Lead Time     │  Monthly Trend      │
+│  (horizontal bar)         │  Risk Curve    │  (bar chart)        │
+│  TA/TO: 41%               │  (line chart)  │  ~37% flat          │
+│  Direct: 17%              │  8% → 68%      │  Jan–Dec            │
+│                           │                │                     │
+├──────────────────────────┬─────────────────┴─────────────────────┤
+│                          │                  │                     │
+│  Special Requests Signal │  City vs Resort  │  Market Segment     │
+│  (bar chart)             │  (bar chart)     │  Risk Table         │
+│  0 req=48% → 5 req=5%   │  City 42%        │  Groups: HIGH       │
+│                          │  Resort 28%      │  Direct: LOW        │
+└──────────────────────────┴──────────────────┴─────────────────────┘
+```
+
+### Design decisions
+
+**Communication layer first:** KPI cards at top give Chleo the headline numbers in 5 seconds. The 6 charts answer the "why" for each KPI — arranged in order of actionability (what to do now → what to investigate → context).
+
+**Chart type rationale:**
+- Horizontal bar for channel comparison — easy rank reading left to right
+- Line chart for lead time — shows the monotonic increase (the key insight) more clearly than bars
+- Bar chart for monthly trend — flat bars make the "no seasonal pattern" finding immediately obvious
+- Two-bar chart for city vs resort — direct comparison needs nothing more complex
+
+**Colour logic:** Red = high risk (TA/TO, 365d+), amber = medium, green = low (Direct). Consistent across all charts so Chleo sees risk at a glance without reading labels.
+
+**Interaction:** Clicking any channel in Chart 1 filters all other charts — lets Chleo answer "what does the lead time curve look like for TA/TO bookings only?" without building a separate view.
