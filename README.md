@@ -84,6 +84,20 @@ All numbers below come from running the LangChain agent on the real Kaggle datas
 
 ---
 
+## Recommendation for Cleo
+
+**Should Cleo invest now, wait, or run a pilot?**
+
+**→ PILOT** — 6–8 weeks, 2 properties, €5–10K, clear Go/No-Go at Week 6.
+
+Not invest fully (PMS data quality and GDPR need validation first). Not wait (competitors Numa, Limehome, BobW are not waiting — 71% of hospitality operators say AI is already having significant impact). Run a focused pilot on cancellation prediction + guest comms, measure real cancellation rate change, then decide on full rollout.
+
+Full reasoning: `cost_estimation/timeline_estimate.md` → Recommendation section  
+Market evidence: `research/ai_adoption_signals.md`  
+Hype vs evidence: `research/hype_vs_evidence.md`
+
+---
+
 ## Repository structure
 
 ```
@@ -94,24 +108,31 @@ project/
 ├── research/
 │   ├── sector_research.md          # EU aparthotel market analysis
 │   ├── opportunities_risks.md      # AI opportunity & risk mapping
-│   └── use_cases.md                # Use case proposals with real data evidence
+│   ├── use_cases.md                # Use case proposals with real data evidence
+│   ├── use_case_discovery.md       # Stakeholder mapping, use case selection & justification
+│   ├── market_research.md          # AI adoption ROI data, precedents, market signals
+│   ├── ai_adoption_signals.md      # 7 adoption signals — what's real vs hype in EU hospitality
+│   └── hype_vs_evidence.md         # Claim-by-claim analysis: invest / pilot / hype
 ├── dashboard/
-│   ├── dashboard.twbx              # Tableau dashboard file
+│   ├── dashboard.twbx              # Tableau dashboard — 6 charts, UC2 cancellation
 │   ├── dashboard_documentation.md  # Metrics, design rationale, usage guide
-│   └── tableau_dashboard_prototype.py  # Python prototype — 3 pages, all use cases
+│   ├── tableau_dashboard_prototype.py  # Python prototype — 3 pages, all use cases
+│   └── uc2_cancellation_dashboard.html # Interactive Plotly dashboard (open in browser)
 ├── n8n/
 │   ├── workflow.json               # Importable n8n workflow
-│   └── workflow_documentation.md  # Node-by-node explanation & setup guide
+│   └── workflow_documentation.md  # Node-by-node explanation, test results, known issues
 ├── agent/
 │   ├── agent.py                    # LangChain agent — all 3 use cases
 │   ├── tools.py                    # 11 data analysis tools
-│   └── insights_generator.py      # Standalone insight formatter
+│   └── insights_generator.py      # 10 real insights from 119,388 booking records
 ├── evaluation/
 │   ├── insight_review.md           # LLM-as-judge evaluation report
-│   └── evaluation_results.json    # Structured scores for all 5 insights
+│   ├── raw_insights.json           # 10 structured insights from agent run
+│   └── evaluation_results.json    # Scores per insight (relevance, accuracy, actionability, clarity)
 ├── cost_estimation/
-│   ├── cost_analysis.md            # Per-use-case cost breakdown + ROI
-│   └── timeline_estimate.md        # 4-phase 14-week rollout plan
+│   ├── cost_analysis.md            # Per-use-case cost breakdown + Year 1 ROI estimates
+│   └── timeline_estimate.md        # Invest/wait/pilot rec + 4-phase plan + risks + team roles
+├── sources.md                      # All sources labelled by type (data/report/case study/vendor)
 ├── download_data.py                # Downloads all 3 datasets from Kaggle
 ├── requirements.txt
 ├── README.md
@@ -122,13 +143,85 @@ project/
 
 ## Datasets
 
-| Dataset | Source | Rows | Use in project |
-|---|---|---|---|
-| Hotel Booking Reservation 2024 | [Kaggle](https://www.kaggle.com/datasets/kundanbedmutha/hotel-booking-reservation) | 119,390 | Primary — all 3 use cases |
-| Hotel Prices in Europe 2024 | [Kaggle](https://www.kaggle.com/datasets/maelysboudier/hotel-prices-in-europe) | ~15,000 | Event-driven pricing benchmarks |
-| Tourism & Hospitality Industry Analysis | [Kaggle](https://www.kaggle.com/datasets/smithmurphy/tourism-and-hospitality-industry-analysis-dataset) | ~500 | Sector KPI benchmarks |
-
 All datasets are free and publicly available with a free Kaggle account.
+
+---
+
+### Primary dataset — Hotel Booking Reservation 2024
+
+**🔗 [kaggle.com/datasets/kundanbedmutha/hotel-booking-reservation](https://www.kaggle.com/datasets/kundanbedmutha/hotel-booking-reservation)**
+
+| Property | Detail |
+|---|---|
+| Rows | 119,390 (119,388 after cleaning) |
+| Columns | 33 |
+| Period covered | January 2022 – December 2024 |
+| Property types | City Hotels and Resort Hotels |
+| Cities / regions | Multiple Indian cities (Mumbai, Delhi, Bangalore, Goa, Jaipur, Kolkata, Chennai, Hyderabad, Indore, Lucknow, Pune, Kochi, Chandigarh, Ahmedabad) across City Hotel and Resort Hotel property types |
+| Guest origin | 177 countries — top markets: Portugal (30.7%), UK, France, Spain, Germany, Ireland, Italy |
+| File size | 21.3 MB |
+
+**Columns in the dataset:**
+
+| Column | Type | Description |
+|---|---|---|
+| `hotel` | string | Property type: City Hotel or Resort Hotel |
+| `is_canceled` | int (0/1) | Cancellation flag — our prediction target (UC2) |
+| `lead_time` | int | Days between booking date and arrival date |
+| `arrival_date_year` | int | Year of arrival (2022–2024) |
+| `arrival_date_month` | string | Month of arrival (January–December) |
+| `arrival_date_week_number` | int | ISO week number |
+| `arrival_date_day_of_month` | int | Day of month |
+| `stays_in_weekend_nights` | int | Nights staying on Saturday/Sunday |
+| `stays_in_week_nights` | int | Nights staying Monday–Friday |
+| `adults` | int | Number of adults |
+| `children` | int | Number of children |
+| `babies` | int | Number of babies |
+| `meal` | string | Meal plan: BB (Bed & Breakfast), HB (Half Board), FB (Full Board), SC (Self Catering) |
+| `country` | string | Guest country of origin (ISO 3166-1 alpha-3) |
+| `market_segment` | string | Direct, Corporate, Online TA, Offline TA/TO, Groups, Aviation, Complementary |
+| `distribution_channel` | string | Direct, TA/TO, GDS, Corporate |
+| `is_repeated_guest` | int (0/1) | Whether guest has stayed before |
+| `previous_cancellations` | int | Number of prior cancellations by this guest |
+| `previous_bookings_not_canceled` | int | Number of prior completed stays |
+| `reserved_room_type` | string | Room category reserved (A–L) |
+| `assigned_room_type` | string | Room category actually assigned |
+| `booking_changes` | int | Number of modifications to booking |
+| `deposit_type` | string | No Deposit / Non Refund / Refundable |
+| `agent` | int | Travel agent ID (nullable) |
+| `company` | int | Corporate account ID (nullable) |
+| `days_in_waiting_list` | int | Days on waiting list before confirmation |
+| `customer_type` | string | Transient, Transient-Party, Contract, Group |
+| `adr` | float | Average Daily Rate in € |
+| `required_car_parking_spaces` | int | Parking spaces requested |
+| `total_of_special_requests` | int | Number of special requests made |
+| `reservation_status` | string | Check-Out, Canceled, No-Show |
+| `reservation_status_date` | date | Date of last status change |
+
+**Why this dataset is ideal for Cleo's business case:**
+
+1. **Covers exactly the signals we need.** `is_canceled`, `lead_time`, `distribution_channel`, `market_segment`, `deposit_type`, and `total_of_special_requests` are all present and clean. These are precisely the fields a real PMS captures — making findings directly applicable to Cleo's actual data.
+
+2. **Large enough to be statistically meaningful.** At 119,388 rows, even sub-segments have enough data to calculate reliable cancellation rates. The Groups segment alone has 19,810 bookings — sufficient for confident analysis.
+
+3. **Real booking behaviour, not synthetic data.** The dataset captures genuine booking and cancellation patterns including the counter-intuitive lead time effect (365d+ = 68% cancel) that synthetic data would not reproduce.
+
+4. **Covers all three use cases.** One dataset supports dynamic pricing analysis (ADR, month, segment), cancellation prediction (is_canceled, lead_time, channel), and upsell opportunity analysis (meal, parking, stay length, repeat guest).
+
+5. **Industry-standard column structure.** The columns map directly to standard PMS field names. `adr`, `market_segment`, `distribution_channel`, `deposit_type` are terminology Cleo's revenue managers will immediately recognise.
+
+6. **Multi-year coverage.** Three years of data (2022–2024) captures post-pandemic demand normalisation — more representative of current booking behaviour than pre-COVID datasets.
+
+**Limitation to disclose to Cleo:** The dataset covers Indian hotel properties, not EU aparthotels specifically. ADR levels (€103–€118) and city/resort split differ from EU markets. Cancellation rate patterns (37.5% overall, 68% for 365d+ bookings) are directional benchmarks — Cleo should validate against her own PMS data before committing to model thresholds.
+
+---
+
+### Supporting datasets
+
+| Dataset | Link | Rows | Used for |
+|---|---|---|---|
+| Hotel Prices in Europe 2024 | [Kaggle](https://www.kaggle.com/datasets/maelysboudier/hotel-prices-in-europe) | ~15,000 | Event-driven pricing benchmarks, Barcelona & Marseille |
+| Tourism & Hospitality Industry Analysis | [Kaggle](https://www.kaggle.com/datasets/smithmurphy/tourism-and-hospitality-industry-analysis-dataset) | ~500 | Sector KPI benchmarks (RevPAR, occupancy) |
 
 ---
 
