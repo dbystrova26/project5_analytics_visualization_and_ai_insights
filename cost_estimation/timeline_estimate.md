@@ -1,90 +1,76 @@
-# Implementation timeline — Pan-European aparthotel AI strategy
+# ── ADD THESE SECTIONS TO THE TOP OF timeline_estimate.md ──────────────────
 
-**Approach:** Phased rollout — start with highest-ROI use case, prove value, then expand  
-**Recommended start:** UC2 (cancellation prediction) + UC3 (guest comms) first — fastest to build and directly visible to Chleo  
-**Then:** UC1 (dynamic pricing) — higher complexity, higher ROI, needs UC2 data pipeline as foundation
+## Recommendation: Invest / Wait / Pilot?
 
----
+**Recommendation: PILOT**
 
-## Phase 1 — Foundation & quick wins (Weeks 1–6)
+Run a 6–8 week pilot on 2 properties (Phase 1 of this plan) before committing full budget.
+Pilot cost: €5–10K. Decision point: Week 6 with real cancellation and comms data.
 
-**Goal:** Prove AI works, build team confidence, create audit infrastructure
+**Why not invest fully now:**
+- PMS data quality needs validation before committing to ML model build
+- GDPR review required before sending automated guest emails at scale
+- OTA contracts need legal check before pricing automation goes live
+- City managers need to trust AI recommendations before chain-wide rollout
 
-| Week | Activities |
+**Why not wait:**
+- Direct competitors (Numa, Limehome, BobW) are already using AI in operations
+- 71% of hospitality professionals say AI is having significant impact right now (Canary Technologies 2026)
+- OTA commission draining 15–25% per booking continues every week without action
+- EU serviced apartment sector is consolidating around tech-forward operators (HVS 2025)
+- The cost of inaction compounds — each week of flat ADR pricing is recoverable revenue lost
+
+**What would change this recommendation:**
+
+| Condition | Changes to |
 |---|---|
-| 1–2 | Data audit: assess PMS data quality, map available fields, identify gaps |
-| 2–3 | Build data pipeline: PMS → cleaned CSV → processed features (UC1 & UC2 foundation) |
-| 3–4 | Build cancellation prediction model (UC2) — rule-based v1 first, then ML v2 |
-| 4–5 | Build n8n retention workflow (UC2 + UC3) — test with 1 property in shadow mode |
-| 5–6 | Build guest comms agent (UC3) — 10 message templates, test with real bookings |
-| 6 | Go-live: UC2 + UC3 on 2 pilot properties. Begin logging all AI actions to Google Sheets |
-
-**Milestone:** 2 properties running live AI retention workflow and automated guest comms.
+| Pilot shows ≥3pp cancellation reduction | Invest — proceed to Phase 2 scale |
+| PMS data quality is very poor | Wait — fix data infrastructure first |
+| OTA contracts block pricing automation | Pivot — scale comms only, skip UC1 |
+| City managers refuse AI recommendations | Wait — invest in change management first |
 
 ---
 
-## Phase 2 — Scale & validate (Weeks 7–10)
+## Why cancellation prediction first (not dynamic pricing)
 
-**Goal:** Roll out UC2 + UC3 to all properties, build dashboard, start pricing research
+Dynamic pricing (UC1) has the highest ROI but requires:
+- Historical competitor rate data (not yet collected)
+- OTA contract legal review before rate automation
+- 12+ months of booking data for model training
+- Higher build complexity (€9,500–€19,000 vs €5,000–€10,000)
 
-| Week | Activities |
-|---|---|
-| 7 | Roll out UC2 + UC3 to all 8–12 properties after pilot validation |
-| 7–8 | Build PowerBI dashboard (Phase 1 metrics: cancellation rate, message delivery rate) |
-| 8–9 | Begin dynamic pricing data collection — gather competitor rate data, event calendars |
-| 9–10 | Train pricing model v1 on historical booking data (advisory mode only — no auto-publish) |
-| 10 | Internal review: show Chleo Phase 1 results. Present cancellation reduction and comms metrics |
+Cancellation prediction (UC2) + guest comms (UC3) can go live in 6 weeks because:
+- All required data (lead time, channel, segment) already exists in the PMS
+- n8n workflow is already built and tested end-to-end
+- ROI is immediate and measurable (cancellation rate week-on-week)
+- Proves AI transparency to Chleo — every action logged, every decision explained
 
-**Milestone:** Full chain on UC2 + UC3. First pricing model trained and ready for shadow testing.
-
----
-
-## Phase 3 — Dynamic pricing (Weeks 11–14)
-
-**Goal:** Deploy pricing engine in advisory mode, validate accuracy, plan auto-publish
-
-| Week | Activities |
-|---|---|
-| 11–12 | Pricing model shadow mode: model suggests rates, revenue managers decide. Log acceptance rate |
-| 12–13 | Refine model based on city manager feedback. Add event calendar integration |
-| 13–14 | Legal review of OTA contracts for rate automation compliance |
-| 14 | Pricing model v1 go-live in advisory mode across all cities |
-
-**Milestone:** Pricing recommendations visible in dashboard. Revenue managers using AI suggestions.
+Dynamic pricing follows in Phase 3 once the data pipeline is established.
 
 ---
 
-## Phase 4 — Automation & monitoring (Weeks 15+)
+## Risks and mitigations
 
-**Goal:** Move pricing to semi-automated, build monitoring, plan ongoing improvement
-
-| Week | Activities |
-|---|---|
-| 15–16 | Set up model monitoring (Evidently AI or custom) — track drift and accuracy |
-| 16–18 | Optionally enable auto-publish pricing for low-variance periods (e.g. weekdays with >60 days lead time) |
-| Ongoing | Quarterly model retraining. Monthly insight quality review. Annual strategy review with Chleo |
-
----
-
-## Summary timeline
-
-```
-Weeks 1–6:   Build foundation + UC2 cancellation + UC3 guest comms (2 pilot properties)
-Weeks 7–10:  Roll out to all cities + dashboard + start pricing research
-Weeks 11–14: Dynamic pricing in shadow mode + legal review
-Weeks 15+:   Monitoring, automation, continuous improvement
-```
-
-**Total time to first visible AI value:** 6 weeks  
-**Total time to full UC1+UC2+UC3 deployment:** 14–16 weeks  
-**Ongoing:** Quarterly retraining and review cycle
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| PMS data quality poor | Medium | High | Data audit in Week 1 before any build commitment |
+| OTA contracts restrict rate automation | Medium | Medium | Legal review in Phase 3 before pricing goes live |
+| City managers don't trust AI | Medium | High | Human override on every action; shadow mode first |
+| GDPR compliance issue | Low | High | DPO review before Week 6 go-live |
+| LLM generates incorrect guest info | Medium | High | All factual fields from PMS — LLM writes personalisation only |
+| Model drift over time | Low | Medium | Quarterly retraining; monthly spot-checks |
+| Pricing model causes rate conflicts | Low | High | Advisory mode only until acceptance rate >80% |
 
 ---
 
-## Key dependencies
+## Team roles and owners
 
-- PMS must support webhook notifications (most modern PMS systems do — confirm before Week 1)
-- SendGrid or Twilio account setup (1 day)
-- Google Workspace account for audit Sheets (likely already exists)
-- At least 12 months of historical booking data in PMS for pricing model training
-- Legal sign-off on OTA contracts before pricing automation goes live
+| Role | Phase | Time | Responsibility |
+|---|---|---|---|
+| Data analyst | All phases | 1 FTE build, 0.25 FTE ongoing | Build, test, monitor, maintain |
+| Revenue manager | All phases | 0.2 FTE | Champion, calibrate thresholds, approve pricing suggestions |
+| City GM (pilot properties) | Phase 1 | 0.1 FTE | Context, feedback, adoption |
+| IT / PMS admin | Phase 1 | 2 days | PMS webhook access |
+| DPO (Data Protection Officer) | Phase 1 | 1 day | GDPR review sign-off |
+| Legal (OTA contracts) | Phase 3 | 2 days | Contract review before pricing automation |
+| CEO (Chleo) | Phase 1, 2, 3 | 3 hours total | Decision approvals at each Go/No-Go gate |
