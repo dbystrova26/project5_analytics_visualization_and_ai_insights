@@ -1,6 +1,4 @@
-# ── ADD THESE SECTIONS TO THE TOP OF timeline_estimate.md ──────────────────
-
-## Recommendation: Invest / Wait / Pilot?
+# Recommendation: Invest / Wait / Pilot?
 
 **Recommendation: PILOT**
 
