@@ -29,8 +29,8 @@ Directional estimates (competitor AI maturity, RevPAR uplift by use case) are no
 - URL: https://www.canarytechnologies.com/post/hospitality-technology-trends
 
 **[MARKET-2] The Business Research Company — AI in Hospitality Market Report, April 2026**
-- Used for: "$11.1B AI hospitality market size by 2030 (CAGR 57.7%)"
-- Market size trajectory: $0.4B (2022) → $11.1B (2030)
+- Used for: "$2.28B AI hospitality market size by 2030 (CAGR 57.7%)"
+- Market size trajectory: $0.23B (2025) → $2.28B (2030)
 - URL: https://www.thebusinessresearchcompany.com/report/artificial-intelligence-in-hospitality-global-market-report
 
 **[MARKET-3] Hotel Technology News — December 2025**
